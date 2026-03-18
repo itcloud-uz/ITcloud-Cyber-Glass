@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+opencv-python
+deepface
+numpy
+pydantic
+python-multipart
+# dlib # Dlib yuzdagi landmarklarni topish uchun (Liveness/EAR) kerak, biroq Windowsda o'rnatish qiyin bo'lishi mumkin.

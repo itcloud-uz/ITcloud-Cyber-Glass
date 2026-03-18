@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>ITcloud | Obsidian OS v1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -355,6 +356,33 @@
                     text.style.color = "var(--text-main)";
                 }, 2000);
             }, 3000);
+        }
+
+        // Sessiya nazorati (Auto-Logout) - 15 daqiqa harakatsizlik
+        let inactivityTime = function () {
+            let time;
+            document.onmousemove = resetTimer;
+            document.onkeypress = resetTimer;
+            
+            function logout() {
+                // Xavfsizlik uchun tizimdan chiqazib tashlash
+                fetch('/logout', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '' }
+                }).then(() => {
+                    window.location.href = '/login';
+                });
+            }
+            
+            function resetTimer() {
+                clearTimeout(time);
+                // 15 daqiqa (900,000 millisekund)
+                time = setTimeout(logout, 900000);
+            }
+        };
+
+        window.onload = function() {
+            inactivityTime();
         }
 
         // Tasodifiy ravishda AI xabar berib turishi (Realistik effekt uchun)
