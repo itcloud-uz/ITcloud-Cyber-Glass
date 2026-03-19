@@ -617,6 +617,7 @@
                             </div>
                             <div style="display: flex; gap: 5px;">
                                 <button class="btn-ios" style="flex:1;" onclick="promptEditBot({{ $bot->id }}, '{{ $bot->name }}', '{{ $bot->token }}', '{{ $bot->agent_type }}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-ios" style="flex:1; color: var(--neon-cyan);" onclick="setBotWebhook({{ $bot->id }})" title="Webhookni O'rnatish"><i class="fa-solid fa-link"></i></button>
                                 <button class="btn-ios" style="flex:1; color: var(--neon-pink);" onclick="deleteBot({{ $bot->id }})"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
@@ -1175,6 +1176,19 @@
                     body: JSON.stringify({ is_active: status })
                 });
                 location.reload();
+            } catch(e) { }
+        }
+
+        async function setBotWebhook(id) {
+            simulateAIAction("Webhook o'rnatilmoqda...");
+            try {
+                let res = await fetch(`${API_PREFIX}/bots/${id}/set-webhook`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                let data = await res.json();
+                if(data.ok) simulateAIAction("Muvaffaqiyatli! Bot endi javob beradi.");
+                else simulateAIAction("Xato: " + (data.description || "Ulanib bo'lmadi"));
             } catch(e) { }
         }
 

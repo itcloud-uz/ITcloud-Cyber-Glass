@@ -67,12 +67,14 @@ class GeminiAgentService
         ];
 
         try {
+            \Illuminate\Support\Facades\Log::info("Gemini Request [{$agentType}]: " . $message);
             $response = Http::post($url, $payload);
             $data = $response->json();
+            \Illuminate\Support\Facades\Log::info("Gemini Response: " . json_encode($data));
 
             $candidate = $data['candidates'][0] ?? null;
             if (!$candidate) {
-                return "AI Xizmati javob bermadi: " . json_encode($data);
+                return "AI Xizmati javob bermadi yoki xato yuz berdi.";
             }
 
             // Function Calling ni tekshirish
@@ -108,10 +110,10 @@ class GeminiAgentService
             }
 
             // Matnli javobni qaytarish
-            return $parts[0]['text'] ?? "AI bo'sh javob qaytardi.";
+            return $parts[0]['text'] ?? "Kechirasiz, hozirda savolingizga javob bera olmayman.";
             
         } catch (\Exception $e) {
-            return "Xatolik yuz berdi: " . $e->getMessage();
+            \Illuminate\Support\Facades\Log::error("Gemini Error: " . $e->getMessage());
         }
     }
 

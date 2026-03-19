@@ -54,6 +54,14 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         Route::post('/api/bots', [\App\Http\Controllers\Api\TelegramBotController::class, 'store']);
         Route::put('/api/bots/{id}', [\App\Http\Controllers\Api\TelegramBotController::class, 'update']);
         Route::delete('/api/bots/{id}', [\App\Http\Controllers\Api\TelegramBotController::class, 'destroy']);
+        Route::post('/api/bots/{id}/set-webhook', function($id) {
+            $bot = \App\Models\TelegramBot::findOrFail($id);
+            $domain = request()->getHost();
+            $webhookUrl = "https://{$domain}/api/webhook/telegram/{$bot->token}";
+            $url = "https://api.telegram.org/bot{$bot->token}/setWebhook?url=" . urlencode($webhookUrl);
+            $res = \Illuminate\Support\Facades\Http::get($url);
+            return response()->json($res->json());
+        });
 
         // Leads API
         Route::patch('/api/leads/{id}/status', function(\Illuminate\Http\Request $request, $id) {
