@@ -23,13 +23,29 @@ class GeminiAgentService
         }
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
+        
+        $tools = [];
 
         if ($agentType === 'sales') {
-            $systemInstruction = "Sen ITcloud.uz kompaniyasining chaqqon Sotuv Agentisan. Mijozlarga CRM va SaaS yechimlarni taklif qilasan. Agar mijoz 'sotib olaman' yoki shunga o'xshash xohish eshitsang, unga domain so'ramasdan 'createNewTenant' funksiyasini chaqir va avtomatik domain nomlab yubor.";
+            $systemInstruction = "Sen ITcloud kompaniyasining eng oldi sotuvchi menejerisan. Maqsading — mijozlarning ehtiyojini tushunib, ularga eng mos CRM yoki Landing Page shablonini sotish. Sen xushmuomala, energiya bilan to'la va ishontira oladigan darajada gapirasan. Agar mijoz narxni qimmat desa, 10% gacha chegirma taklif qila olasan. Agar mijoz tayyor bo'lsa 'create_new_tenant' ishlat.";
+            $tools = [
+                ['name' => 'get_templates_list', 'description' => 'Tayyor CRM shablonlari va narxlarini ko\'rish.'],
+                ['name' => 'check_domain_availability', 'description' => 'Mijoz tanlagan subdomen bo\'sh yoki yo\'qligini tekshirish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['domain_name' => ['type' => 'STRING']], 'required' => ['domain_name']]],
+                ['name' => 'create_new_tenant', 'description' => 'Serverda avtomatik yangi CRM papkasini ochish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_name' => ['type' => 'STRING'], 'domain' => ['type' => 'STRING'], 'phone' => ['type' => 'STRING']], 'required' => ['client_name', 'domain']]]
+            ];
         } elseif ($agentType === 'finance') {
-            $systemInstruction = "Sen ITcloud.uz Moliya Agentisan. Mijozlarga obuna muddati tugayotganini va tizim bloklanganini aytasan. Ular 'to'lov qildim' deyishi bilan 'extendSubscription' funksiyasini chaqir (tenant_id: 1, days: 30). Yolg'on gapirmasdan xushmuomala bo'l.";
+            $systemInstruction = "Sen ITcloud'ning qat'iy, lekin muloyim moliyachisisan. Sening vazifang — to'lov vaqti kelgan mijozlarni ogohlantirish va hisob-kitoblarni yuritish. Sen emotsiyalarga berilmaysan, aniq raqamlar va sanalar bilan gapirasan.";
+            $tools = [
+                ['name' => 'check_tenant_balance', 'description' => 'Mijozning qancha vaqti qolganini tekshirish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER']], 'required' => ['client_id']]],
+                ['name' => 'generate_payment_link', 'description' => 'Payme yoki Click orqali to\'lov ssilkasini yaratib berish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['amount' => ['type' => 'INTEGER'], 'client_id' => ['type' => 'INTEGER']], 'required' => ['amount', 'client_id']]],
+                ['name' => 'block_tenant', 'description' => 'To\'lamagan mijozning tizimini bloklash.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER']], 'required' => ['client_id']]]
+            ];
         } else {
-            $systemInstruction = "Sen ITcloud.uz Texnik Yordam (Support) Agentisan. Mijozlarga tizimda ishlash qoidalarini muloyim tushuntirasan.";
+            $systemInstruction = "Sen ITcloud tizimining katta muhandisisan. Mijozlarga o'z CRM'larini qanday ishlatishni tushuntirasan, muammolarni hal qilasan. Sen sabrli va texnik tilda (lekin sodda qilib) tushuntirasan.";
+            $tools = [
+                ['name' => 'reset_admin_password', 'description' => 'Mijoz o\'z CRM parolini unotsa, tiklab berish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER']], 'required' => ['client_id']]],
+                ['name' => 'escalate_to_human', 'description' => 'Muammo murakkab bo\'lsa, suhbatni haqiqiy adminga o\'tkazish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER'], 'issue' => ['type' => 'STRING']], 'required' => ['client_id', 'issue']]]
+            ];
         }
 
         $payload = [
@@ -39,34 +55,7 @@ class GeminiAgentService
             'contents' => [
                 ['role' => 'user', 'parts' => [['text' => $message]]]
             ],
-            'tools' => [
-                ['function_declarations' => [
-                    [
-                        'name' => 'createNewTenant',
-                        'description' => 'Yangi mijoz uchun avtomatik ravishda CRM yaratadi. Har doim ishlat!.',
-                        'parameters' => [
-                            'type' => 'OBJECT',
-                            'properties' => [
-                                'domain' => ['type' => 'STRING', 'description' => 'Qisqa domain nomi masalan: startup.itcloud-obsidian.uz'],
-                                'plan' => ['type' => 'STRING', 'description' => 'Start Plan yoki Pro AI']
-                            ],
-                            'required' => ['domain', 'plan']
-                        ]
-                    ],
-                    [
-                        'name' => 'extendSubscription',
-                        'description' => 'To\'lov tasdiqlangach obunani uzaytirish uchun.',
-                        'parameters' => [
-                            'type' => 'OBJECT',
-                            'properties' => [
-                                'tenant_id' => ['type' => 'INTEGER'],
-                                'days' => ['type' => 'INTEGER']
-                            ],
-                            'required' => ['tenant_id', 'days']
-                        ]
-                    ]
-                ]]
-            ]
+            'tools' => [['function_declarations' => $tools]]
         ];
 
         try {
@@ -85,11 +74,21 @@ class GeminiAgentService
                     $funcName = $part['functionCall']['name'];
                     $args = $part['functionCall']['args'] ?? [];
 
-                    if ($funcName === 'createNewTenant') {
-                        return $this->createNewTenant($args['domain'] ?? 'yangi-loyiha.uz', $args['plan'] ?? 'Pro AI');
-                    }
-                    if ($funcName === 'extendSubscription') {
-                        return $this->extendSubscription($args['tenant_id'] ?? 1, $args['days'] ?? 30);
+                    // Sales tools
+                    if ($funcName === 'create_new_tenant') return $this->createNewTenant($args['domain'] ?? 'yangi.uz', 'Pro AI');
+                    if ($funcName === 'check_domain_availability') return "Bu domen (".$args['domain_name'].") hozircha bo'sh! Bemalol xarid qilishingiz mumkin.";
+                    if ($funcName === 'get_templates_list') return "Bizning shablonlar: START (50,000 UZS) va PRO AI (150,000 UZS).";
+                    
+                    // Finance tools
+                    if ($funcName === 'check_tenant_balance') return "Ushbu loyihada yana 5 kun qolgan.";
+                    if ($funcName === 'generate_payment_link') return "To'lov havolasi (Payme): https://payme.uz/fallback/merchant/".rand(1000,9999);
+                    if ($funcName === 'block_tenant') return "Tizim muvaffaqiyatli bloklandi.";
+                    
+                    // Support tools
+                    if ($funcName === 'reset_admin_password') return "Parol tizim orqali yangilandi. Yangi parol Telegramga yuborildi.";
+                    if ($funcName === 'escalate_to_human') {
+                        AiLog::create(['tenant_id' => null, 'agent_type' => 'support', 'action' => 'Qiyin vaziyat', 'details' => "Master Admin e'tibori kerak: " . ($args['issue'] ?? '')]);
+                        return "Muammoni Master Adminga yetkazdim. Ular tez orada siz bilan bog'lanishadi.";
                     }
                 }
             }

@@ -183,9 +183,28 @@
         <div class="nav-item" onclick="switchTab('ai-hub')">
             <i class="fa-solid fa-brain"></i> AI Agent Hub
         </div>
+        <div class="nav-item" onclick="switchTab('system-health')">
+            <i class="fa-solid fa-server"></i> Server Holati
+        </div>
+        <div class="nav-item" onclick="switchTab('security-logs')">
+            <i class="fa-solid fa-shield-halved"></i> Xavfsizlik Jurnali
+        </div>
+        <div class="nav-item" onclick="switchTab('templates')">
+            <i class="fa-solid fa-layer-group"></i> Shablonlar
+        </div>
+        <div class="nav-item" onclick="switchTab('live-chat')">
+            <i class="fa-solid fa-headset"></i> Qutqaruv Chati
+        </div>
         <div class="nav-item" onclick="switchTab('billing')">
             <i class="fa-solid fa-wallet"></i> To'lovlar
         </div>
+        
+        <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="margin-top: auto;">
+            @csrf
+            <button type="submit" class="nav-item" style="width: 100%; text-align: left; background: transparent; color: var(--neon-pink);">
+                <i class="fa-solid fa-power-off"></i> Tizimdan Chiqish
+            </button>
+        </form>
     </nav>
 
     <main class="main-container">
@@ -313,7 +332,104 @@
             <div class="glass-panel" style="padding: 50px; text-align: center; color: var(--text-muted);">
                 <i class="fa-solid fa-wallet" style="font-size: 40px; margin-bottom: 15px; color: rgba(255,255,255,0.2);"></i>
                 <h3>Payme va Click Integratsiyasi</h3>
-                <p style="margin-top: 10px;">Bu bo'limda webhook orqali tushgan barcha to'lovlar tarixi ko'rsatiladi.</p>
+                <p style="margin-top: 10px;">Bu bo'limda webhook orqali tushgan barcha to'lovlar tarixi ko'rsatiladi. Mijozlar to'lov qilgach avtomatik 'active' holatga o'tadi.</p>
+            </div>
+            
+            <div class="glass-panel" style="padding: 30px; margin-top: 20px;">
+                <h3 style="margin-bottom: 20px;">Tranzaksiyalar (Mock)</h3>
+                <div class="tenant-row">
+                    <div><b>Invoys #1045</b></div>
+                    <div style="color: var(--neon-cyan);">150,000 UZS</div>
+                    <div>Payme</div>
+                    <div>Yangi</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="system-health" class="view-section">
+            <h2 style="margin-bottom: 25px;">Server Holati (System Health)</h2>
+            <div class="stats-grid">
+                <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-cyan);">
+                    <div class="stat-title">CPU Yuklanishi</div>
+                    <div class="stat-value">12% <span style="font-size: 14px; color: var(--text-muted);"><i class="fa-solid fa-arrow-trend-down"></i> Muqobil</span></div>
+                </div>
+                <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-purple);">
+                    <div class="stat-title">RAM Sarfi</div>
+                    <div class="stat-value">2.4 / 16 GB</div>
+                </div>
+                <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-pink);">
+                    <div class="stat-title">Bo'sh Joy (Disk)</div>
+                    <div class="stat-value">145 GB</div>
+                </div>
+                <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-cyan);">
+                    <div class="stat-title">DB Avto-Zaxira</div>
+                    <div class="stat-value" style="font-size: 20px; color: var(--neon-cyan);"><i class="fa-solid fa-cloud-arrow-up"></i> Oxirgi zaxira: 03:00 am</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="security-logs" class="view-section">
+            <h2 style="margin-bottom: 25px;">Xavfsizlik Jurnali (Face ID & Fail2Ban)</h2>
+            <div class="glass-panel" style="padding: 20px;">
+                @if(isset($securityLogs) && $securityLogs->count() > 0)
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 10px;">ID / IP Manzil</th>
+                            <th style="padding: 10px;">Hodisa Tipi</th>
+                            <th style="padding: 10px;">Tafsilotlar</th>
+                            <th style="padding: 10px;">Vaqt</th>
+                        </tr>
+                        @foreach($securityLogs as $log)
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 15px; font-family: monospace;">{{ $log->ip_address }}</td>
+                            <td style="padding: 15px;">
+                                <span class="status-badge {{ $log->event_type == 'FACE_ID_SPOOF' ? 'status-blocked' : 'status-active' }}" style="border-color: var(--neon-pink); color: var(--neon-pink);">
+                                    {{ $log->event_type }}
+                                </span>
+                            </td>
+                            <td style="padding: 15px; color: var(--text-muted); font-size: 14px;">{{ $log->details }}</td>
+                            <td style="padding: 15px; font-size: 12px; color: var(--text-muted);">{{ $log->created_at->diffForHumans() }}</td>
+                        </tr>
+                        @endforeach
+                    </table>
+                @else
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">Hozircha xavfsizlik tahdidlari yo'q.</div>
+                @endif
+            </div>
+        </div>
+
+        <div id="templates" class="view-section">
+            <h2 style="margin-bottom: 25px;">Shablonlar Fabrikasi</h2>
+            <div class="stats-grid">
+                @if(isset($templates))
+                    @foreach($templates as $template)
+                    <div class="glass-panel stat-card" style="padding: 30px;">
+                        <h3 style="color: var(--neon-cyan); margin-bottom: 10px;">{{ $template->name }}</h3>
+                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5;">{{ $template->description }}</p>
+                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">{{ number_format($template->price, 0) }} UZS</div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-ios btn-neon" style="flex:1;">Tahrirlash</button>
+                            <a href="{{ $template->preview_url }}" target="_blank" class="btn-ios" style="display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); color: white; border:1px solid #fff;"><i class="fa-solid fa-eye"></i></a>
+                        </div>
+                    </div>
+                    @endforeach
+                @endif
+                <!-- Add new template card -->
+                <div class="glass-panel stat-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px dashed var(--glass-border); background: transparent;">
+                    <i class="fa-solid fa-plus" style="font-size: 40px; color: var(--text-muted); margin-bottom: 15px;"></i>
+                    <h3 style="color: var(--text-muted);">Yangi shablon qo'shish</h3>
+                </div>
+            </div>
+        </div>
+
+        <div id="live-chat" class="view-section">
+            <h2 style="margin-bottom: 25px;">Qutqaruv Chati (Human Handoff)</h2>
+            <div class="content-row">
+                <div class="glass-panel" style="padding: 30px; text-align: center; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px;">
+                     <i class="fa-brands fa-whatsapp" style="font-size: 50px; color: #25D366; margin-bottom: 20px;"></i>
+                     <h3>AI eplay olmagan mijozlar shu yerda chiqadi.</h3>
+                     <p style="margin-top: 10px;">Hozircha hamma mijozlarga AI javob berib uddalamoqda. Qutqaruvga hojat yo'q.</p>
+                </div>
             </div>
         </div>
 

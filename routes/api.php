@@ -8,3 +8,4 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/webhook/telegram', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'handle']);
+Route::post('/webhook/payme', [\App\Http\Controllers\Api\PaymentController::class, 'handlePaymeWebhook']);

@@ -21,6 +21,9 @@ class AdminController extends Controller
         
         $tenants = Tenant::orderBy('status', 'asc')->orderBy('expires_at', 'asc')->get();
         $aiLogs = AiLog::latest()->take(10)->get();
+        
+        $templates = \App\Models\Template::all();
+        $securityLogs = \App\Models\SecurityLog::latest()->take(20)->get();
 
         return view('welcome', compact(
             'activeTenantsCount',
@@ -28,7 +31,9 @@ class AdminController extends Controller
             'aiSalesCount',
             'aiSavedTime',
             'tenants',
-            'aiLogs'
+            'aiLogs',
+            'templates',
+            'securityLogs'
         ));
     }
 }

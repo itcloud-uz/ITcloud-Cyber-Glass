@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\Tenant;
 use App\Models\Subscription;
 use App\Models\AiLog;
+use App\Models\Template;
+use App\Models\SecurityLog;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -75,6 +77,34 @@ class DatabaseSeeder extends Seeder
             'action' => 'To\'lov qabul qildi',
             'details' => '"Delta Edu" loyihasi hisobidan 150.000 so\'m to\'lov qabul qildi. Tizim 30 kunga uzaytirildi.',
             'created_at' => Carbon::today()->setHour(14)->setMinute(32),
+        ]);
+
+        Template::create([
+            'name' => 'Start Plan',
+            'description' => 'Boshlang\'ich bizneslar uchun mos tushuvchi oddiy va qulay CRM shabloni. Cheklanmagan bo\'limlar.',
+            'price' => 50000.00,
+            'preview_url' => 'https://start.itcloud.uz',
+        ]);
+
+        Template::create([
+            'name' => 'Pro AI',
+            'description' => 'Sun\'iy intellekt integratsiyalangan kuchli vosita. Murakkab loyihalar uchun yengillik beardi.',
+            'price' => 150000.00,
+            'preview_url' => 'https://pro.itcloud.uz',
+        ]);
+
+        SecurityLog::create([
+            'ip_address' => '192.168.1.44',
+            'event_type' => 'FAILED_LOGIN',
+            'details' => 'Parol xato kiritildi: admin@itcloud.uz (Fail2Ban tomonidan bloklanishi mumkin)',
+            'created_at' => Carbon::now()->subHours(5),
+        ]);
+
+        SecurityLog::create([
+            'ip_address' => '45.132.x.x',
+            'event_type' => 'FACE_ID_SPOOF',
+            'details' => 'Liveness Detection xatoligi: qimirlamayotgan rasm ishlatildi.',
+            'created_at' => Carbon::now()->subHours(12),
         ]);
     }
 }
