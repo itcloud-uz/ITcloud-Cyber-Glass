@@ -174,34 +174,34 @@
     <nav class="sidebar glass-panel">
         <div class="brand">IT<span>cloud</span></div>
         
-        <div class="nav-item active" onclick="switchTab('dashboard')">
+        <div class="nav-item active" onclick="switchTab(event, 'dashboard')">
             <i class="fa-solid fa-border-all"></i> Dashboard
         </div>
-        <div class="nav-item" onclick="switchTab('tenants')">
+        <div class="nav-item" onclick="switchTab(event, 'tenants')">
             <i class="fa-solid fa-users"></i> CRM Mijozlar
         </div>
-        <div class="nav-item" onclick="switchTab('employees')">
+        <div class="nav-item" onclick="switchTab(event, 'employees')">
             <i class="fa-solid fa-user-shield"></i> Xodimlar / Admin
         </div>
-        <div class="nav-item" onclick="switchTab('ai-hub')">
+        <div class="nav-item" onclick="switchTab(event, 'ai-hub')">
             <i class="fa-solid fa-brain"></i> AI Agent Hub
         </div>
-        <div class="nav-item" onclick="switchTab('system-health')">
+        <div class="nav-item" onclick="switchTab(event, 'system-health')">
             <i class="fa-solid fa-server"></i> Server Holati
         </div>
-        <div class="nav-item" onclick="switchTab('security-logs')">
+        <div class="nav-item" onclick="switchTab(event, 'security-logs')">
             <i class="fa-solid fa-shield-halved"></i> Xavfsizlik Jurnali
         </div>
-        <div class="nav-item" onclick="switchTab('templates')">
+        <div class="nav-item" onclick="switchTab(event, 'templates')">
             <i class="fa-solid fa-layer-group"></i> Shablonlar
         </div>
-        <div class="nav-item" onclick="switchTab('bot-manager')">
+        <div class="nav-item" onclick="switchTab(event, 'bot-manager')">
             <i class="fa-brands fa-telegram"></i> Botlar Manager
         </div>
-        <div class="nav-item" onclick="switchTab('live-chat')">
+        <div class="nav-item" onclick="switchTab(event, 'live-chat')">
             <i class="fa-solid fa-headset"></i> Qutqaruv Chati
         </div>
-        <div class="nav-item" onclick="switchTab('billing')">
+        <div class="nav-item" onclick="switchTab(event, 'billing')">
             <i class="fa-solid fa-wallet"></i> To'lovlar
         </div>
         
@@ -501,7 +501,10 @@
                                 <span style="font-size: 12px; color: var(--text-muted);">Vazifasi: <b>{{ strtoupper($bot->agent_type) }}</b></span>
                                 <div class="ios-toggle {{ $bot->is_active ? 'on' : '' }}" onclick="toggleBot({{ $bot->id }}, {{ $bot->is_active ? 0 : 1 }})"></div>
                             </div>
-                            <button class="btn-ios" style="width: 100%;" onclick="deleteBot({{ $bot->id }})"><i class="fa-solid fa-trash"></i> To'xtatish</button>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn-ios" style="flex:1;" onclick="promptEditBot({{ $bot->id }}, '{{ $bot->name }}', '{{ $bot->token }}', '{{ $bot->agent_type }}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-ios" style="flex:1; color: var(--neon-pink);" onclick="deleteBot({{ $bot->id }})"><i class="fa-solid fa-trash"></i></button>
+                            </div>
                         </div>
                         @endforeach
                     @endif
@@ -683,6 +686,24 @@
             } catch(e) { }
         }
 
+        async function promptEditBot(id, oldName, oldToken, oldType) {
+            let name = prompt("Bot nomi:", oldName);
+            if(!name) return;
+            let token = prompt("API Token:", oldToken);
+            if(!token) return;
+            let type = prompt("Agent turi (sales, finance, support, custom):", oldType);
+            
+            try {
+                let res = await fetch(`${API_PREFIX}/bots/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ name, token, agent_type: type })
+                });
+                let data = await res.json();
+                if(data.status === 'success') location.reload();
+            } catch(e) { }
+        }
+
         async function deleteBot(id) {
             if(!confirm("Botni o'chirib tashlamoqchimisiz?")) return;
             try {
@@ -695,7 +716,7 @@
         }
 
         // Yon Menyuni (Tablarni) almashtirish mantig'i
-        function switchTab(tabId) {
+        function switchTab(event, tabId) {
             // Hamma sectionlarni yashirish
             document.querySelectorAll('.view-section').forEach(el => {
                 el.classList.remove('active');
@@ -706,8 +727,14 @@
             });
             
             // Tanlanganini ko'rsatish
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            const targetSection = document.getElementById(tabId);
+            if(targetSection) {
+                targetSection.classList.add('active');
+            }
+            
+            if(event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
         }
 
         // Dynamic Island (Sun'iy Intelekt xabarnomasi) animatsiyasi
