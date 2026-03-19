@@ -132,7 +132,7 @@
             
             <div class="input-group">
                 <label>Maxfiy Parol</label>
-                <input type="password" id="password" class="input-field" placeholder="••••••••" value="password" />
+                <input type="password" id="password" class="input-field" placeholder="••••••••" value="clone1997" />
             </div>
 
             <button class="btn-neon" onclick="submitPassword()" id="btn-login">
