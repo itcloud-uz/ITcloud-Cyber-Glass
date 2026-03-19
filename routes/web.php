@@ -48,6 +48,7 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
 
         // Templates API
         Route::post('/api/templates', [\App\Http\Controllers\Api\TemplateController::class, 'store']);
+        Route::put('/api/templates/{id}', [\App\Http\Controllers\Api\TemplateController::class, 'update']);
         Route::delete('/api/templates/{id}', [\App\Http\Controllers\Api\TemplateController::class, 'destroy']);
 
         // bots API

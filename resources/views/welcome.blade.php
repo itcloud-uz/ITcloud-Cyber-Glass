@@ -565,15 +565,32 @@
                         <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--neon-cyan);"></div>
                         
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                            <h3 style="color: var(--neon-cyan);">{{ $template->name }}</h3>
-                            <button onclick="deleteTemplate({{ $template->id }})" class="btn-icon" style="color: var(--neon-pink); opacity: 0.6;"><i class="fa-solid fa-trash-can"></i></button>
+                            <div>
+                                <h3 style="color: var(--neon-cyan);">{{ $template->name }}</h3>
+                                <div style="font-size: 10px; text-transform: uppercase; opacity: 0.5; margin-top: 4px;">
+                                    {{ $template->service_type }} | {{ $template->payment_type }}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick='openTemplateModal({{ $template->id }}, @json($template))' class="btn-icon" style="color: var(--neon-cyan); opacity: 0.6;"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteTemplate({{ $template->id }})" class="btn-icon" style="color: var(--neon-pink); opacity: 0.6;"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
                         </div>
 
                         <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; min-height: 42px;">{{ $template->description }}</p>
                         
-                        <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Nima kiritilgan:</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                @foreach($template->includes ?? [] as $inc)
+                                    <span style="font-size: 10px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">{{ $inc }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
                             <span class="service-link-badge"><i class="fa-solid fa-link"></i> {{ parse_url($template->preview_url, PHP_URL_HOST) }}</span>
-                            <span style="font-weight: bold; font-size: 18px;">{{ number_format($template->price, 0) }} UZS</span>
+                            <span style="font-weight: bold; font-size: 18px; color: var(--neon-pink);">{{ number_format($template->price, 0) }} UZS</span>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 45px; gap: 10px;">
@@ -741,13 +758,46 @@
                 <i class="fa-solid fa-cube"></i> <span id="modalHeaderText">Yangi Shablon Sozlamalari</span>
             </div>
             <form id="templateForm">
+                <input type="hidden" id="edit_tpl_id">
                 <div class="form-group">
                     <label>Shablon / Sayt nomi</label>
                     <input type="text" id="tpl_name" class="form-control" placeholder="Masalan: Delta CRM v2" required>
                 </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Xizmat Turi</label>
+                        <select id="tpl_service_type" class="form-control">
+                            <option value="software">Dasturiy ta'minot</option>
+                            <option value="service" selected>Xizmat ko'rsatish</option>
+                            <option value="hybrid">Gibrid</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>To'lov Turi</label>
+                        <select id="tpl_payment_type" class="form-control">
+                            <option value="one-time">Bir martalik</option>
+                            <option value="monthly" selected>Oylik obuna</option>
+                            <option value="yearly">Yillik obuna</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label>Tafsilotlar (Qisqa tavsif)</label>
-                    <textarea id="tpl_desc" class="form-control" style="height: 80px;" placeholder="Tizim nimalar qila olishi haqida..." required></textarea>
+                    <label>Tafsilotlar (AI uchun asosiy tavsif)</label>
+                    <textarea id="tpl_desc" class="form-control" style="height: 60px;" placeholder="Tizim nimalar qila olishi haqida..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Afzalliklari (Har bir qatorga bittadan)</label>
+                    <textarea id="tpl_advantages" class="form-control" style="height: 60px;" placeholder="Tezkorlik, 24/7 yordam..."></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Narx ichidagi funksiyalar (vergul bilan)</label>
+                        <input type="text" id="tpl_includes" class="form-control" placeholder="Admin panel, Telegram bot...">
+                    </div>
+                    <div class="form-group">
+                        <label>Qo'shimcha xizmatlar (vergul bilan)</label>
+                        <input type="text" id="tpl_extras" class="form-control" placeholder="SEO, Dizayn...">
+                    </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div class="form-group">
@@ -1066,9 +1116,24 @@
         }
 
         // Templates Management UI
-        function openTemplateModal() {
+        function openTemplateModal(id = null, data = null) {
+            document.getElementById('edit_tpl_id').value = id || '';
+            document.getElementById('modalHeaderText').innerText = id ? "Xizmatni Tahrirlash" : "Yangi Xizmat / Shablon";
+            
+            if(data) {
+                document.getElementById('tpl_name').value = data.name || '';
+                document.getElementById('tpl_desc').value = data.description || '';
+                document.getElementById('tpl_price').value = data.price || 0;
+                document.getElementById('tpl_preview').value = data.preview_url || '';
+                document.getElementById('tpl_service_type').value = data.service_type || 'service';
+                document.getElementById('tpl_payment_type').value = data.payment_type || 'monthly';
+                document.getElementById('tpl_advantages').value = data.advantages || '';
+                document.getElementById('tpl_includes').value = Array.isArray(data.includes) ? data.includes.join(', ') : '';
+                document.getElementById('tpl_extras').value = Array.isArray(data.extra_services) ? data.extra_services.join(', ') : '';
+            } else {
+                document.getElementById('templateForm').reset();
+            }
             document.getElementById('templateModal').classList.add('active');
-            document.getElementById('templateForm').reset();
         }
 
         function closeTemplateModal() {
@@ -1077,20 +1142,31 @@
 
         document.getElementById('templateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            let name = document.getElementById('tpl_name').value;
-            let description = document.getElementById('tpl_desc').value;
-            let price = document.getElementById('tpl_price').value;
-            let preview_url = document.getElementById('tpl_preview').value;
+            let id = document.getElementById('edit_tpl_id').value;
+            let payload = {
+                name: document.getElementById('tpl_name').value,
+                description: document.getElementById('tpl_desc').value,
+                price: document.getElementById('tpl_price').value,
+                preview_url: document.getElementById('tpl_preview').value,
+                service_type: document.getElementById('tpl_service_type').value,
+                payment_type: document.getElementById('tpl_payment_type').value,
+                advantages: document.getElementById('tpl_advantages').value,
+                includes: document.getElementById('tpl_includes').value.split(',').map(s => s.trim()).filter(s => s !== ""),
+                extra_services: document.getElementById('tpl_extras').value.split(',').map(s => s.trim()).filter(s => s !== "")
+            };
+
+            let url = id ? `${API_PREFIX}/templates/${id}` : `${API_PREFIX}/templates`;
+            let method = id ? 'PUT' : 'POST';
 
             try {
-                let res = await fetch(`${API_PREFIX}/templates`, {
-                    method: 'POST',
+                let res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ name, description, price, preview_url })
+                    body: JSON.stringify(payload)
                 });
                 let data = await res.json();
                 if(data.status === 'success') {
-                    simulateAIAction("Yangi shablon tizimga muvaffaqiyatli ulandi!");
+                    simulateAIAction(id ? "Xizmat ma'lumotlari yangilandi!" : "Yangi shablon tizimga muvaffaqiyatli ulandi!");
                     closeTemplateModal();
                     setTimeout(() => location.reload(), 1500);
                 }

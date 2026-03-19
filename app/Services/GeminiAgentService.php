@@ -27,8 +27,11 @@ class GeminiAgentService
         $tools = [];
 
         if ($agentType === 'sales') {
-            $templates = \App\Models\Template::all()->map(fn($t) => "{$t->name} (Narxi: {$t->price} UZS)")->implode(', ');
-            $systemInstruction = "Sen ITcloud kompaniyasining eng kuchli sotuvchi menejerisan. Bizda quyidagi xizmatlar mavjud: $templates. Maqsading — mijozlarning ehtiyojini tushunib, ularga eng mos xizmatni taklif qilish. Agar mijoz bog'lanmoqchi bo'lsa yoki sotib olishga qiziqsa 'create_sales_lead' funksiyasini ishlatib ularning ma'lumotlarini bazaga kirit. Hech qachon mijozni shunchaki kutib qol dima, doim ma'lumotlarini qoldirishni so'ra.";
+            $templates = \App\Models\Template::all()->map(function($t) {
+                $incl = is_array($t->includes) ? implode(', ', $t->includes) : '';
+                return "{$t->name}: {$t->price} UZS ({$t->payment_type}). Ichida: $incl. Afzalliklari: {$t->advantages}";
+            })->implode('; ');
+            $systemInstruction = "Sen ITcloud kompaniyasining eng kuchli sotuvchi menejerisan. Bizda quyidagi xizmatlar va tariflar mavjud: $templates. Maqsading — mijozlarning ehtiyojini tushunib, ularga eng mos xizmatni taklif qilish. Sizning xizmatlaringizning afzalliklari va nima kiritilganligi haqida batafsil ma'lumot bering. Agar mijoz bog'lanmoqchi bo'lsa yoki sotib olishga qiziqsa 'create_sales_lead' funksiyasini ishlatib ularning ma'lumotlarini bazaga kirit. Hech qachon mijozni shunchaki kutib qol dima, doim ma'lumotlarini qoldirishni so'ra.";
             $tools = [
                 ['name' => 'get_templates_list', 'description' => 'Tayyor CRM shablonlari va narxlarini ko\'rish.'],
                 ['name' => 'create_sales_lead', 'description' => 'Mijoz ma\'lumotlarini sotuv bo\'limiga yuborish.', 'parameters' => [
@@ -96,8 +99,11 @@ class GeminiAgentService
                     }
                     if ($funcName === 'create_new_tenant') return $this->createNewTenant($args['domain'] ?? 'yangi.uz', 'Pro AI');
                     if ($funcName === 'get_templates_list') {
-                        $tpls = \App\Models\Template::all()->map(fn($t) => "- {$t->name}: {$t->price} UZS")->implode("\n");
-                        return "Bizning shablonlar:\n" . $tpls;
+                        $tpls = \App\Models\Template::all()->map(function($t) {
+                            $incl = is_array($t->includes) ? implode(', ', $t->includes) : 'Standard';
+                            return "*{$t->name}* - {$t->price} UZS ({$t->payment_type})\n- Ichida: $incl\n- Afzalligi: {$t->advantages}";
+                        })->implode("\n\n");
+                        return "Bizning barcha xizmatlarimiz ro'yxati:\n\n" . $tpls;
                     }
                     
                     // Support tools
