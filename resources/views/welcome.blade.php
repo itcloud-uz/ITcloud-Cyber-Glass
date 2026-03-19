@@ -180,6 +180,9 @@
         <div class="nav-item" onclick="switchTab('tenants')">
             <i class="fa-solid fa-users"></i> CRM Mijozlar
         </div>
+        <div class="nav-item" onclick="switchTab('employees')">
+            <i class="fa-solid fa-user-shield"></i> Xodimlar / Admin
+        </div>
         <div class="nav-item" onclick="switchTab('ai-hub')">
             <i class="fa-solid fa-brain"></i> AI Agent Hub
         </div>
@@ -263,7 +266,10 @@
         </div>
 
         <div id="tenants" class="view-section">
-            <h2 style="margin-bottom: 25px;">Loyihalar Tarmog'i</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2>Loyihalar Tarmog'i</h2>
+                <button class="btn-ios btn-neon" onclick="promptAddTenant()"><i class="fa-solid fa-plus"></i> Yangi Mijoz</button>
+            </div>
             
             <div id="tenants-container">
                 @if(isset($tenants) && $tenants->count() > 0)
@@ -277,15 +283,16 @@
                             <div><span class="status-badge status-active"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Faol</span></div>
                             <div style="color: var(--text-muted); font-size: 14px;"><i class="fa-regular fa-clock"></i> {{ now()->diffInDays($tenant->expires_at, false) }} kun qoldi</div>
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn-ios btn-neon">+ 1 Oy</button>
-                                <button class="btn-ios" style="color: var(--neon-pink); border: 1px solid var(--neon-pink);">Bloklash</button>
+                                <button class="btn-ios btn-neon" onclick="promptSubscription({{ $tenant->id }})">+ Uzaytirish</button>
+                                <button class="btn-ios" style="color: var(--neon-pink); border: 1px solid var(--neon-pink);" onclick="changeTenantStatus({{ $tenant->id }}, 'blocked')">Bloklash</button>
+                                <button class="btn-ios" onclick="promptEditTenant({{ $tenant->id }}, '{{ $tenant->company_name }}', '{{ $tenant->domain }}')"><i class="fa-solid fa-pen"></i></button>
                             </div>
                         @else
                             <div><span class="status-badge status-blocked"><i class="fa-solid fa-lock" style="font-size: 10px;"></i> Bloklangan</span></div>
-                            <div style="color: var(--neon-pink); font-size: 14px;"><i class="fa-solid fa-triangle-exclamation"></i> Vaqt tugagan</div>
+                            <div style="color: var(--neon-pink); font-size: 14px;"><i class="fa-solid fa-triangle-exclamation"></i> Haqdorlik yo'q</div>
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn-ios btn-neon">Ochish (To'landi)</button>
-                                <button class="btn-ios"><i class="fa-solid fa-trash"></i></button>
+                                <button class="btn-ios btn-neon" onclick="changeTenantStatus({{ $tenant->id }}, 'active')">Ochish</button>
+                                <button class="btn-ios" onclick="promptSubscription({{ $tenant->id }})">+ Uzaytirish</button>
                             </div>
                         @endif
                     </div>
@@ -293,6 +300,57 @@
                 @else
                     <div style="text-align: center; padding: 40px; color: var(--text-muted);">Hozircha loyihalar yo'q.</div>
                 @endif
+            </div>
+        </div>
+        
+        <div id="employees" class="view-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2>Xodimlar va Master Adminlar</h2>
+                <button class="btn-ios btn-neon" onclick="document.getElementById('add-emp-form').style.display='block'"><i class="fa-solid fa-user-plus"></i> Yangi Xodim Qo'shish</button>
+            </div>
+            
+            <div class="glass-panel" id="add-emp-form" style="display:none; margin-bottom: 20px; padding: 30px;">
+                <h3 style="margin-bottom: 20px; color: var(--neon-cyan);">Yangi Xodim Sozlamalari (Tizimga Kiritish)</h3>
+                <form onsubmit="event.preventDefault(); submitEmployee();" id="empForm">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">To'liq Ismi</label>
+                            <input type="text" id="emp_name" required style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Email / Login</label>
+                            <input type="email" id="emp_email" required style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Parol</label>
+                            <input type="password" id="emp_password" required minlength="6" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Pasport Raqami (JSHSHR)</label>
+                            <input type="text" id="emp_passport" placeholder="AA1234567" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Roli</label>
+                            <select id="emp_role" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
+                                <option value="admin">Admin</option>
+                                <option value="master">Master Admin (Root)</option>
+                                <option value="operator">Operator / Sotuvchi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Yuz qiyofasi (Face ID Base64 yoki Rasm)</label>
+                            <input type="file" id="emp_face_photo" accept="image/*" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; display:flex; gap: 10px;">
+                        <button type="submit" class="btn-ios btn-neon">Saqlash</button>
+                        <button type="button" class="btn-ios" onclick="document.getElementById('add-emp-form').style.display='none'">Bekor qilish</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="glass-panel" style="padding: 30px; text-align: center; color: var(--text-muted);">
+                Ayni damda foydalanuvchilar qismi test rejimida ishlayapti. Hozirgi Tizim Egasi: Master Agent.
             </div>
         </div>
 
@@ -436,6 +494,99 @@
     </main>
 
     <script>
+        const API_PREFIX = '/api';
+        
+        // Mijoz qo'shish prompt
+        async function promptAddTenant() {
+            let company = prompt("Yangi kompaniya/mijoz nomini kiriting:");
+            if(!company) return;
+            let domain = prompt("Mijoz uchun qisqa domen kiriting (masalan: newcrm.itcloud.uz):");
+            if(!domain) return;
+            
+            try {
+                let res = await fetch(`${API_PREFIX}/tenants`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ company_name: company, domain: domain })
+                });
+                let data = await res.json();
+                if(data.status === 'success') location.reload();
+            } catch(e) { alert("Xatolik"); }
+        }
+
+        async function promptEditTenant(id, oldCompany, oldDomain) {
+            let company = prompt("Kompaniya nomi:", oldCompany);
+            if(!company) return;
+            let domain = prompt("Domen nomi:", oldDomain);
+            if(!domain) return;
+            
+            try {
+                let res = await fetch(`${API_PREFIX}/tenants/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ company_name: company, domain: domain })
+                });
+                let data = await res.json();
+                if(data.status === 'success') location.reload();
+            } catch(e) { }
+        }
+
+        async function changeTenantStatus(id, newStatus) {
+            try {
+                let res = await fetch(`${API_PREFIX}/tenants/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                let data = await res.json();
+                if(data.status === 'success') location.reload();
+            } catch(e) { }
+        }
+
+        async function promptSubscription(id) {
+            let plan = prompt("Tarif muddatini tanlang: (Kun yozing, masalan 30, aylikka yoxud 'infinity' cheksiz deb yozing)", "30");
+            if(!plan) return;
+            try {
+                let res = await fetch(`${API_PREFIX}/tenants/${id}/subscription`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ duration: plan, amount: 150000 })
+                });
+                let data = await res.json();
+                if(data.status === 'success') location.reload();
+            } catch(e) { }
+        }
+
+        async function submitEmployee() {
+            let fd = new FormData();
+            fd.append('name', document.getElementById('emp_name').value);
+            fd.append('email', document.getElementById('emp_email').value);
+            fd.append('password', document.getElementById('emp_password').value);
+            fd.append('role', document.getElementById('emp_role').value);
+            fd.append('passport_number', document.getElementById('emp_passport').value);
+            fd.append('is_face_id_enabled', 1);
+            
+            let photoInput = document.getElementById('emp_face_photo');
+            if(photoInput.files[0]) {
+                fd.append('face_id_photo', photoInput.files[0]);
+            }
+            
+            try {
+                let res = await fetch(`${API_PREFIX}/employees`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: fd
+                });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    alert("Yangi xodim qo'shildi! Endi ular Face ID rasm orqali ishonchli kira oladilar.");
+                    location.reload();
+                } else {
+                    alert("Pochtada yoki bazada muammo. " + (data.message || ''));
+                }
+            } catch(e) { alert("Xatolik. Rasm hajmi juda katta bo'lishi mumkin."); }
+        }
+
         // Yon Menyuni (Tablarni) almashtirish mantig'i
         function switchTab(tabId) {
             // Hamma sectionlarni yashirish

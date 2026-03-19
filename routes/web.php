@@ -20,6 +20,15 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
     // Dashboard requires standard Auth AND Face ID
     Route::middleware(['auth', CheckFaceId::class])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('home');
+
+        // Tenants API (CRUD)
+        Route::post('/api/tenants', [\App\Http\Controllers\Api\TenantController::class, 'store']);
+        Route::put('/api/tenants/{id}', [\App\Http\Controllers\Api\TenantController::class, 'update']);
+        Route::patch('/api/tenants/{id}/status', [\App\Http\Controllers\Api\TenantController::class, 'changeStatus']);
+        Route::post('/api/tenants/{id}/subscription', [\App\Http\Controllers\Api\TenantController::class, 'addSubscription']);
+
+        // Employees API
+        Route::post('/api/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'store']);
     });
 
 });

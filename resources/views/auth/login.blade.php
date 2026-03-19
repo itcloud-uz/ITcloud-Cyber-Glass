@@ -97,9 +97,12 @@
         /* Yuz Skaneri (Face ID) UX */
         #face-id-container { display: none; text-align: center; }
         .scanner-box {
-            position: relative; width: 200px; height: 200px; margin: 0 auto 30px; border-radius: 50%; border: 2px dashed var(--neon-cyan); padding: 10px; animation: scanSpin 6s linear infinite;
+            position: relative; width: 220px; height: 220px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center;
         }
-        .scanner-box video { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .scanner-box::before {
+            content: ''; position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 3px dashed var(--neon-cyan); animation: scanSpin 6s linear infinite; box-shadow: 0 0 20px rgba(0,255,204,0.3);
+        }
+        .scanner-box video { width: 200px; height: 200px; border-radius: 50%; object-fit: cover; z-index: 10; border: 2px solid rgba(0,255,204,0.2); }
         .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); animation: scanMove 2s infinite alternate; }
         
         @keyframes scanMove { 0% { top: 10%; } 100% { top: 90%; } }

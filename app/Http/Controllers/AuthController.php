@@ -30,8 +30,17 @@ class AuthController extends Controller
 
     public function verifyFaceId(Request $request)
     {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'Sessiya topilmadi. Qaytadan urinib ko\'ring.'], 401);
+        }
+
+        if (!$user->is_face_id_enabled || empty($user->face_id_photo_path)) {
+            return response()->json(['status' => 'error', 'message' => 'Sizning Face ID rasmingiz bazaga kiritilmagan! Iltimos, OTP orqali kiring.'], 401);
+        }
+
         // In real world, the python service would verify and send a token or we would call Python API 
-        // with the image data. Here we mock:
+        // Here we mock:
         $token = $request->input('face_token');
         if ($token === 'face_id_success') { 
             $request->session()->put('face_id_verified', true);

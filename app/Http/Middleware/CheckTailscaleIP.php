@@ -18,10 +18,10 @@ class CheckTailscaleIP
         $ip = $request->ip();
 
         // 100.x.x.x is Tailscale's CGNAT IPv4 space.
-        // We also mock 127.0.0.1 so it runs locally for development.
-        if ($ip !== '127.0.0.1' && !str_starts_with($ip, '100.')) {
+        // We also mock 127.0.0.1 and ::1 so it runs locally for development.
+        if ($ip !== '127.0.0.1' && $ip !== '::1' && !str_starts_with($ip, '100.')) {
             // For extra security, don't even say "Unauthorized", just abort.
-            abort(403, 'Access denied. You are not on the Tailscale VPN.');
+            abort(403, 'Access denied. You are not on the Tailscale VPN. Your IP: ' . $ip);
         }
 
         return $next($request);

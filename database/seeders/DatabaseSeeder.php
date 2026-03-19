@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'ITcloud Master',
             'email' => 'admin@itcloud.uz',
+            'face_id_photo_path' => 'mocked.jpg' // Face ID ishlashi uchun
         ]);
 
         $delta = Tenant::create([
