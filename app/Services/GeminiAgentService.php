@@ -31,10 +31,12 @@ class GeminiAgentService
             }
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={$this->apiKey}";
         
-        $tools = [];
-        \Illuminate\Support\Facades\Log::info("Gemini Request [{$agentType}]: " . $message);
+        $tools = [
+            ['name' => 'get_system_overview', 'description' => 'Tizimdagi umumiy holatni ko\'rish (Loyihalar, Leadlar, Botlar soni).'],
+            ['name' => 'get_recent_events', 'description' => 'Oxirgi 5 ta AI agent harakatlari va tizim o\'zgarishlarini ko\'rish.']
+        ];
 
         if ($agentType === 'sales') {
             $templates = \App\Models\Template::all()->map(function($t) {
@@ -42,7 +44,7 @@ class GeminiAgentService
                 return "{$t->name}: {$t->price} UZS ({$t->payment_type}). Ichida: $incl. Afzalliklari: {$t->advantages}";
             })->implode('; ');
             $systemInstruction = "Sen ITcloud kompaniyasining eng kuchli sotuvchi menejerisan. Bizda quyidagi xizmatlar va tariflar mavjud: $templates. Maqsading — mijozlarning ehtiyojini tushunib, ularga eng mos xizmatni taklif qilish. Sizning xizmatlaringizning afzalliklari va nima kiritilganligi haqida batafsil ma'lumot bering. Agar mijoz bog'lanmoqchi bo'lsa yoki sotib olishga qiziqsa 'create_sales_lead' funksiyasini ishlatib ularning ma'lumotlarini bazaga kirit. Hech qachon mijozni shunchaki kutib qol dima, doim ma'lumotlarini qoldirishni so'ra.";
-            $tools = [
+            $tools = array_merge($tools, [
                 ['name' => 'get_templates_list', 'description' => 'Tayyor CRM shablonlari va narxlarini ko\'rish.'],
                 ['name' => 'create_sales_lead', 'description' => 'Mijoz ma\'lumotlarini sotuv bo\'limiga yuborish.', 'parameters' => [
                     'type' => 'OBJECT', 
@@ -53,24 +55,29 @@ class GeminiAgentService
                     ], 
                     'required' => ['customer_name', 'phone']
                 ]]
-            ];
+            ]);
         } elseif ($agentType === 'finance') {
             $systemInstruction = "Sen ITcloud'ning qat'iy, lekin muloyim moliyachisisan. Sening vazifang — to'lov vaqti kelgan mijozlarni ogohlantirish va hisob-kitoblarni yuritish. Sen emotsiyalarga berilmaysan, aniq raqamlar va sanalar bilan gapirasan.";
-            $tools = [
+            $tools = array_merge($tools, [
                 ['name' => 'check_tenant_balance', 'description' => 'Mijozning qancha vaqti qolganini tekshirish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER']], 'required' => ['client_id']]],
                 ['name' => 'generate_payment_link', 'description' => 'Payme yoki Click orqali to\'lov ssilkasini yaratib berish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['amount' => ['type' => 'INTEGER'], 'client_id' => ['type' => 'INTEGER']], 'required' => ['amount', 'client_id']]],
                 ['name' => 'block_tenant', 'description' => 'To\'lamagan mijozning tizimini bloklash.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER']], 'required' => ['client_id']]]
-            ];
+            ]);
         } else {
             $systemInstruction = "Sen ITcloud tizimining katta muhandisisan. Mijozlarga o'z CRM'larini qanday ishlatishni tushuntirasan, muammolarni hal qilasan. Sen sabrli va texnik tilda (lekin sodda qilib) tushuntirasan.";
-            $tools = [
+            $tools = array_merge($tools, [
                 ['name' => 'reset_admin_password', 'description' => 'Mijoz o\'z CRM parolini unotsa, tiklab berish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER']], 'required' => ['client_id']]],
                 ['name' => 'escalate_to_human', 'description' => 'Muammo murakkab bo\'lsa, suhbatni haqiqiy adminga o\'tkazish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER'], 'issue' => ['type' => 'STRING']], 'required' => ['client_id', 'issue']]]
-            ];
+            ]);
         }
 
         if (!empty($currentTask)) {
             $systemInstruction .= " Senga bitta MAXSUS VAZIFA (TASK) yuklatilgan: " . $currentTask . ". Barcha javoblaringda faqat shu vazifani inobatga ol va uning doirasida ishla.";
+        }
+
+        $tools_payload = [];
+        if (!empty($tools)) {
+            $tools_payload = [['function_declarations' => $tools]];
         }
 
         $payload = [
@@ -79,15 +86,18 @@ class GeminiAgentService
             ],
             'contents' => [
                 ['role' => 'user', 'parts' => [['text' => $message]]]
-            ],
-            'tools' => [['function_declarations' => $tools]]
+            ]
         ];
 
+        if (!empty($tools_payload)) {
+            $payload['tools'] = $tools_payload;
+        }
+
         try {
-            \Illuminate\Support\Facades\Log::info("Gemini Request [{$agentType}]: " . $message);
+            \Illuminate\Support\Facades\Log::info("Gemini Request [{$agentType}]: " . json_encode($payload));
             $response = Http::post($url, $payload);
             $data = $response->json();
-            \Illuminate\Support\Facades\Log::info("Gemini Response: " . json_encode($data));
+            \Illuminate\Support\Facades\Log::info("Gemini Full Response: " . json_encode($data));
 
             $candidate = $data['candidates'][0] ?? null;
             if (!$candidate) {
@@ -125,6 +135,21 @@ class GeminiAgentService
                     if ($funcName === 'escalate_to_human') {
                         AiLog::create(['tenant_id' => null, 'agent_type' => 'support', 'action' => 'Qiyin vaziyat', 'details' => "Master Admin e'tibori kerak: " . ($args['issue'] ?? '')]);
                         return "Muammoni Master Adminga yetkazdim. Ular tez orada siz bilan bog'lanishadi.";
+                    }
+
+                    // Global Tools handling
+                    if ($funcName === 'get_system_overview') {
+                        $tenants = \App\Models\Tenant::count();
+                        $leads = \App\Models\Lead::count();
+                        $bots = \App\Models\TelegramBot::count();
+                        return "Tizim holati: Jami $tenants ta mijoz loyihasi, $leads ta yangi so'rovlar (leads) va $bots ta AI agentlar faoliyat yuritmoqda.";
+                    }
+
+                    if ($funcName === 'get_recent_events') {
+                        $logs = \App\Models\AiLog::latest()->take(5)->get()->map(function($l) {
+                            return "[{$l->created_at->format('H:i')}] {$l->agent_type}: {$l->action} - {$l->details}";
+                        })->implode("\n");
+                        return "Oxirgi faoliyatlar:\n" . ($logs ?: "Hozircha faoliyatlar yo'q.");
                     }
                 }
             }
