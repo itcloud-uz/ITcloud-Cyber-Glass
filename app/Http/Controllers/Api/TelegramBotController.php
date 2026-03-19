@@ -17,7 +17,7 @@ class TelegramBotController extends Controller
     {
         $data = $request->validate([
             'name' => 'required',
-            'token' => 'required|unique:telegram_bots',
+            'token' => 'nullable|unique:telegram_bots',
             'agent_type' => 'required|in:sales,finance,support,custom',
             'is_active' => 'boolean'
         ]);
@@ -30,6 +30,9 @@ class TelegramBotController extends Controller
     public function update(Request $request, $id)
     {
         $bot = TelegramBot::findOrFail($id);
+        $request->validate([
+            'token' => 'nullable|unique:telegram_bots,token,' . $id
+        ]);
         $bot->update($request->all());
         return response()->json(['status' => 'success']);
     }

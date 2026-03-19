@@ -609,17 +609,24 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                         <div>
                             <h3 style="color: white; margin-bottom: 5px;">{{ $bot->name }}</h3>
-                            <span class="badge" style="background: rgba(255,255,255,0.05);">{{ strtoupper($bot->agent_type) }} UNIT</span>
+                            <div style="display: flex; gap: 5px;">
+                                <span class="badge" style="background: rgba(255,255,255,0.05); font-size: 9px;">{{ strtoupper($bot->agent_type) }}</span>
+                                @if($bot->token)
+                                    <span class="badge" style="background: rgba(0, 136, 204, 0.2); color: #0088cc; font-size: 9px;"><i class="fa-brands fa-telegram"></i> TG BOT</span>
+                                @else
+                                    <span class="badge" style="background: rgba(0, 255, 242, 0.1); color: var(--neon-cyan); font-size: 9px;"><i class="fa-solid fa-brain"></i> INTERNAL AI</span>
+                                @endif
+                            </div>
                         </div>
                         <div class="status-badge {{ $bot->is_active ? 'status-active' : 'status-blocked' }}" style="font-size: 10px;">{{ $bot->is_active ? 'ONLINE' : 'OFFLINE' }}</div>
                     </div>
                     
-                    <div style="margin-bottom: 15px; font-size: 13px; color: var(--text-muted); min-height: 40px;">
-                        <b>Hozirgi vazifasi:</b> {{ $bot->current_task ?? 'Hech qanday maxsus vazifa yo\'q. Standart rejimda ishlamoqda.' }}
+                    <div style="margin-bottom: 15px; font-size: 13px; color: rgba(255,255,255,0.7); min-height: 40px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        <span style="opacity: 0.5;">Missiya:</span> {{ $bot->current_task ?? 'Standart boshqaruv rejimi.' }}
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <button onclick="openTaskModal({{ $bot->id }}, '{{ $bot->name }}', '{{ $bot->current_task }}')" class="btn-ios" style="background: rgba(176,38,255,0.1); border-color: rgba(176,38,255,0.3); color: var(--neon-purple);"><i class="fa-solid fa-list-check"></i> Topshiriq</button>
+                        <button onclick="openTaskModal({{ $bot->id }}, '{{ $bot->name }}', '{{ $bot->current_task }}')" class="btn-ios" style="background: rgba(176,38,255,0.1); border-color: rgba(176,38,255,0.3); color: var(--neon-purple);"><i class="fa-solid fa-list-check"></i> Missiya</button>
                         <button onclick="openAiChat({{ $bot->id }}, '{{ $bot->name }}')" class="btn-ios btn-neon"><i class="fa-solid fa-comments"></i> Chat</button>
                     </div>
                 </div>
@@ -897,33 +904,34 @@
         </div>
     </div>
 
-    <!-- Bot Modal -->
+    <!-- AI Agent / Bot Modal -->
     <div id="botModal" class="modal-overlay" onclick="if(event.target === this) closeBotModal()">
         <div class="glass-modal">
-            <div class="modal-title">
-                <i class="fa-brands fa-telegram"></i> <span id="botModalHeader">Yangi Telegram Bot</span>
-            </div>
+            <div class="modal-title" id="botModalHeader">Yangi AI Agent Qo'shish</div>
             <form id="botForm">
                 <input type="hidden" id="edit_bot_id">
                 <div class="form-group">
-                    <label>Bot Nomi</label>
-                    <input type="text" id="bot_name" class="form-control" placeholder="Masalan: ITcloud Sales Bot" required>
+                    <label>Agent Nomi</label>
+                    <input type="text" id="bot_name" class="form-control" placeholder="Masalan: Markaziy Sotuvchi" required>
                 </div>
                 <div class="form-group">
-                    <label>Telegram API Token</label>
-                    <input type="text" id="bot_token" class="form-control" placeholder="123456:ABC-DEF..." required>
-                </div>
-                <div class="form-group">
-                    <label>AI Agent Rollari (Vazifasi)</label>
+                    <label>Agent Turi / Roli</label>
                     <select id="bot_agent_type" class="form-control">
-                        <option value="sales">Sales (Sotuvchi)</option>
-                        <option value="finance">Finance (Hisobchi)</option>
-                        <option value="support">Support (Texnik Yordam)</option>
-                        <option value="custom">Custom (Maxsus)</option>
+                        <option value="sales">Sotuv Menejeri (Sales)</option>
+                        <option value="finance">Moliya Nazorati (Finance)</option>
+                        <option value="support">Texnik Yordam (Support)</option>
+                        <option value="custom">Maxsus Agent (Custom)</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Telegram Token (ixtiyoriy)</span>
+                        <div style="font-size: 10px; opacity: 0.5;">Bo'sh qolsa ichki AI agent bo'ladi</div>
+                    </label>
+                    <input type="text" id="bot_token" class="form-control" placeholder="BOT_TOKEN_HERE">
+                </div>
                 <div class="modal-actions">
-                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Botni Faollashtirish</button>
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Agentni Saqlash</button>
                     <button type="button" class="btn-ios" onclick="closeBotModal()" style="flex: 1;">Bekor qilish</button>
                 </div>
             </form>
@@ -1323,7 +1331,7 @@
             document.getElementById('bot_name').value = name;
             document.getElementById('bot_token').value = token;
             document.getElementById('bot_agent_type').value = type;
-            document.getElementById('botModalHeader').innerText = id ? "Botni Tahrirlash" : "Yangi AI Bot Qo'shish";
+            document.getElementById('botModalHeader').innerText = id ? "Agentni Tahrirlash" : "Yangi AI Agent Qo'shish";
             document.getElementById('botModal').classList.add('active');
         }
 
@@ -1349,11 +1357,11 @@
                 });
                 let data = await res.json();
                 if(data.status === 'success') {
-                    simulateAIAction(id ? "Bot muvaffaqiyatli yangilandi." : "Yangi AI Bot faollashtirildi!");
+                    simulateAIAction(id ? "Agent tahrirlandi." : "Yangi AI agent ishga tushirildi!");
                     closeBotModal();
                     setTimeout(() => location.reload(), 1500);
                 }
-            } catch(e) { }
+            } catch(e) { alert("Xatolik yuz berdi"); }
         });
 
         function promptAddBot() {
