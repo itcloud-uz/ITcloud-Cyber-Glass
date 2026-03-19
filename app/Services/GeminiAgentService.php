@@ -18,32 +18,88 @@ class GeminiAgentService
 
     public function handleIncomingMessage(string $agentType, string $message, string $chatId)
     {
-        // Bu yerda aslida Gemini API ga so'rov ketishi kerak (System Prompt bilan birga)
-        // Hozirgi bosqichda Function Calling mock qilingan.
+        if (empty($this->apiKey)) {
+            return "Xatolik: Gemini API kiliti o'rnatilmagan.";
+        }
+
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
 
         if ($agentType === 'sales') {
-            if (str_contains(strtolower($message), 'sotib olaman')) {
-                // Agent create_new_tenant(domain, plan) chaqiradi
-                $domain = 'yangi-mijoz-' . rand(100, 999) . '.itcloud-obsidian.uz';
-                return $this->createNewTenant($domain, 'Start Plan');
+            $systemInstruction = "Sen ITcloud.uz kompaniyasining chaqqon Sotuv Agentisan. Mijozlarga CRM va SaaS yechimlarni taklif qilasan. Agar mijoz 'sotib olaman' yoki shunga o'xshash xohish eshitsang, unga domain so'ramasdan 'createNewTenant' funksiyasini chaqir va avtomatik domain nomlab yubor.";
+        } elseif ($agentType === 'finance') {
+            $systemInstruction = "Sen ITcloud.uz Moliya Agentisan. Mijozlarga obuna muddati tugayotganini va tizim bloklanganini aytasan. Ular 'to'lov qildim' deyishi bilan 'extendSubscription' funksiyasini chaqir (tenant_id: 1, days: 30). Yolg'on gapirmasdan xushmuomala bo'l.";
+        } else {
+            $systemInstruction = "Sen ITcloud.uz Texnik Yordam (Support) Agentisan. Mijozlarga tizimda ishlash qoidalarini muloyim tushuntirasan.";
+        }
+
+        $payload = [
+            'system_instruction' => [
+                'parts' => [['text' => $systemInstruction]]
+            ],
+            'contents' => [
+                ['role' => 'user', 'parts' => [['text' => $message]]]
+            ],
+            'tools' => [
+                ['function_declarations' => [
+                    [
+                        'name' => 'createNewTenant',
+                        'description' => 'Yangi mijoz uchun avtomatik ravishda CRM yaratadi. Har doim ishlat!.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'domain' => ['type' => 'STRING', 'description' => 'Qisqa domain nomi masalan: startup.itcloud-obsidian.uz'],
+                                'plan' => ['type' => 'STRING', 'description' => 'Start Plan yoki Pro AI']
+                            ],
+                            'required' => ['domain', 'plan']
+                        ]
+                    ],
+                    [
+                        'name' => 'extendSubscription',
+                        'description' => 'To\'lov tasdiqlangach obunani uzaytirish uchun.',
+                        'parameters' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'tenant_id' => ['type' => 'INTEGER'],
+                                'days' => ['type' => 'INTEGER']
+                            ],
+                            'required' => ['tenant_id', 'days']
+                        ]
+                    ]
+                ]]
+            ]
+        ];
+
+        try {
+            $response = Http::post($url, $payload);
+            $data = $response->json();
+
+            $candidate = $data['candidates'][0] ?? null;
+            if (!$candidate) {
+                return "AI Xizmati javob bermadi: " . json_encode($data);
             }
-            return "Assalomu alaykum! ITcloud xizmatlariga xush kelibsiz. Sotib olishni xohlaysizmi?";
-        }
 
-        if ($agentType === 'finance') {
-            if (str_contains(strtolower($message), 'tolov qildim') || str_contains(strtolower($message), "to'lov qildim")) {
-                // Agent extend_subscription(client_id, 30_days) chaqiradi
-                $tenantId = Tenant::first()->id ?? 1; // namuna uchun birinchi mijoz
-                return $this->extendSubscription($tenantId, 30);
+            // Function Calling ni tekshirish
+            $parts = $candidate['content']['parts'] ?? [];
+            foreach ($parts as $part) {
+                if (isset($part['functionCall'])) {
+                    $funcName = $part['functionCall']['name'];
+                    $args = $part['functionCall']['args'] ?? [];
+
+                    if ($funcName === 'createNewTenant') {
+                        return $this->createNewTenant($args['domain'] ?? 'yangi-loyiha.uz', $args['plan'] ?? 'Pro AI');
+                    }
+                    if ($funcName === 'extendSubscription') {
+                        return $this->extendSubscription($args['tenant_id'] ?? 1, $args['days'] ?? 30);
+                    }
+                }
             }
-            return "Hurmatli mijoz, obunangiz vaqti tugamoqda. To'lovni shoshiling.";
-        }
 
-        if ($agentType === 'support') {
-            return "Xayrli kun! Texnik yordam agentiman. Portalda qanday muammo bor?";
+            // Matnli javobni qaytarish
+            return $parts[0]['text'] ?? "AI bo'sh javob qaytardi.";
+            
+        } catch (\Exception $e) {
+            return "Xatolik yuz berdi: " . $e->getMessage();
         }
-
-        return "Noma'lum agent.";
     }
 
     public function createNewTenant(string $domain, string $planName)
