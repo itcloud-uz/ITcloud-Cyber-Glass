@@ -256,6 +256,73 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+        /* Gallery Sidebar */
+        .gallery-sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 380px;
+            height: 100%;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--glass-border);
+            z-index: 3000;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 30px;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+        }
+        .gallery-sidebar.active {
+            right: 0;
+        }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 150px);
+        }
+        .gallery-item {
+            position: relative;
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .gallery-item:hover {
+            transform: scale(1.05);
+            border-color: var(--neon-cyan);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .gallery-item .file-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 30px;
+            color: var(--text-muted);
+        }
+        .gallery-item .overlay-down {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.7);
+            padding: 5px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--neon-cyan);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .gallery-item:hover .overlay-down { opacity: 1; }
     </style>
 </head>
 <body>
@@ -740,7 +807,7 @@
                             </div>
                             <div style="display: flex; gap: 5px; margin-top: 10px;">
                                 <button onclick="openUploadModal({{ $tenant->id }}, 'contract')" class="btn-ios" style="padding: 5px 10px; font-size: 11px; flex: 1;">Biriktirish</button>
-                                <button onclick="openUploadModal({{ $tenant->id }}, 'files')" class="btn-ios" style="padding: 5px 10px; font-size: 11px; flex: 1;">Fayllar</button>
+                                <button onclick="openFileGallery({{ $tenant->id }}, '{{ $tenant->company_name }}', @json($tenant->files ?? []))" class="btn-ios" style="padding: 5px 10px; font-size: 11px; flex: 1;">Fayllar</button>
                             </div>
                         </div>
                         @endforeach
@@ -941,6 +1008,17 @@
                     <button type="button" class="btn-ios" onclick="closeUploadModal()" style="flex: 1;">Bekor qilish</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Gallery Sidebar Viewer -->
+    <div id="gallerySidebar" class="gallery-sidebar">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 id="galleryTitle">Mijoz Fayllari</h3>
+            <button onclick="closeFileGallery()" style="background:none; border:none; color:white; cursor:pointer; font-size: 20px;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="galleryContent" class="gallery-grid">
+            <!-- Files loaded via JS -->
         </div>
     </div>
 
@@ -1253,6 +1331,60 @@
                 });
                 location.reload();
             } catch(e) { }
+        }
+
+        // File Gallery & Smart Download
+        function openFileGallery(tenantId, companyName, files) {
+            const sidebar = document.getElementById('gallerySidebar');
+            const content = document.getElementById('galleryContent');
+            document.getElementById('galleryTitle').innerText = companyName + " - Galereya";
+            
+            content.innerHTML = '';
+            
+            if(!files || files.length === 0) {
+                content.innerHTML = '<div style="grid-column: span 2; text-align: center; color: var(--text-muted); margin-top: 50px;">Hech qanday fayl yo\'q</div>';
+            } else {
+                files.forEach((file, index) => {
+                    const isImg = file.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    
+                    const fileName = file.split('/').pop();
+                    const taggedName = `ID-${tenantId}-${companyName}-${fileName}`;
+
+                    item.onclick = () => smartDownload(`/storage/${file}`, taggedName);
+                    
+                    if(isImg) {
+                        item.innerHTML = `<img src="/storage/${file}"><div class="overlay-down"><i class="fa-solid fa-download"></i> Yuklash</div>`;
+                    } else {
+                        item.innerHTML = `<div class="file-icon"><i class="fa-solid fa-file-lines"></i></div><div class="overlay-down"><i class="fa-solid fa-download"></i> Yuklash</div>`;
+                    }
+                    content.appendChild(item);
+                });
+            }
+            
+            sidebar.classList.add('active');
+        }
+
+        function closeFileGallery() {
+            document.getElementById('gallerySidebar').classList.remove('active');
+        }
+
+        async function smartDownload(url, filename) {
+            simulateAIAction("Faylga maxsus ID biriktirilmoqda...");
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                simulateAIAction("Muvaffaqiyatli yuklandi: " + filename);
+            } catch(e) {
+                simulateAIAction("Xatolik: Faylni yuklab bo'lmadi");
+            }
         }
 
         async function setBotWebhook(id) {
