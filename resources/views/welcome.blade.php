@@ -249,6 +249,13 @@
             margin-top: 20px;
             background: #fff;
         }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -291,8 +298,8 @@
         <div class="nav-item" onclick="switchTab(event, 'live-chat')">
             <i class="fa-solid fa-headset"></i> Qutqaruv Chati
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'billing')">
-            <i class="fa-solid fa-wallet"></i> To'lovlar
+        <div class="nav-item" onclick="switchTab(event, 'finance')">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Moliya & Sotuv
         </div>
         
         <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="margin-top: auto;">
@@ -635,6 +642,95 @@
             </div>
         </div>
 
+        <div id="finance" class="view-section">
+            <h2 style="margin-bottom: 25px;">Kompaniya Moliya & Sotuv Markazi</h2>
+            
+            <!-- Dashboard for Finance -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="glass-panel stat-card">
+                    <div style="font-size: 14px; opacity: 0.7;">Jami Tushum</div>
+                    <div style="font-size: 28px; font-weight: bold; color: var(--neon-cyan);">45,200,000 UZS</div>
+                    <div style="font-size: 12px; color: #0f0; margin-top: 5px;">+12% o'tgan oydan</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div style="font-size: 14px; opacity: 0.7;">Yangi Leadlar (Botdan)</div>
+                    <div style="font-size: 28px; font-weight: bold; color: var(--neon-purple);">{{ count($leads ?? []) }}ta</div>
+                    <div style="font-size: 12px; opacity: 0.5;">Bugungi o'sish</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div style="font-size: 14px; opacity: 0.7;">Faol Shartnomalar</div>
+                    <div style="font-size: 28px; font-weight: bold; color: var(--neon-pink);">{{ $activeTenantsCount ?? 0 }}ta</div>
+                </div>
+            </div>
+
+            <!-- Leads and Sales Section -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                <!-- Leads Table -->
+                <div class="glass-panel" style="padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3><i class="fa-solid fa-bolt" style="color: var(--neon-cyan);"></i> Yangi So'rovlar (Leads)</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                                    <th style="padding: 15px; font-size: 13px; opacity: 0.6;">Mijoz</th>
+                                    <th style="padding: 15px; font-size: 13px; opacity: 0.6;">Telegram / Tel</th>
+                                    <th style="padding: 15px; font-size: 13px; opacity: 0.6;">Qiziqish</th>
+                                    <th style="padding: 15px; font-size: 13px; opacity: 0.6;">Holat</th>
+                                    <th style="padding: 15px; font-size: 13px; opacity: 0.6;">Amal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($leads ?? [] as $lead)
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 15px;">{{ $lead->customer_name }}</td>
+                                    <td style="padding: 15px;">{{ $lead->phone }}</td>
+                                    <td style="padding: 15px; font-size: 13px;">{{ $lead->details }}</td>
+                                    <td style="padding: 15px;">
+                                        <span class="badge" style="background: {{ $lead->status == 'yangi' ? 'rgba(0, 255, 242, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}; color: {{ $lead->status == 'yangi' ? 'var(--neon-cyan)' : 'white' }};">
+                                            {{ strtoupper($lead->status) }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 15px;">
+                                        <select onchange="updateLeadStatus({{ $lead->id }}, this.value)" style="background: #1a1a1a; border: 1px solid var(--glass-border); color: white; border-radius: 5px; padding: 2px 5px; font-size: 12px;">
+                                            <option value="yangi" {{ $lead->status == 'yangi' ? 'selected' : '' }}>Yangi</option>
+                                            <option value="jarayonda" {{ $lead->status == 'jarayonda' ? 'selected' : '' }}>Harakatda</option>
+                                            <option value="sotildi" {{ $lead->status == 'sotildi' ? 'selected' : '' }}>Sotildi</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Client Files & Contracts -->
+                <div class="glass-panel" style="padding: 25px;">
+                    <h3><i class="fa-solid fa-file-signature"></i> Shartnomalar</h3>
+                    <div style="margin-top: 15px;">
+                        @foreach($tenants as $tenant)
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 15px; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-weight: bold; font-size: 14px;">{{ $tenant->company_name }}</div>
+                                @if($tenant->contract_path)
+                                    <a href="/storage/{{ $tenant->contract_path }}" target="_blank" style="color: var(--neon-cyan); font-size: 12px;"><i class="fa-solid fa-download"></i> PDF</a>
+                                @else
+                                    <span style="font-size: 10px; opacity: 0.5;">Shartnoma yo'q</span>
+                                @endif
+                            </div>
+                            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                <button onclick="openUploadModal({{ $tenant->id }}, 'contract')" class="btn-ios" style="padding: 5px 10px; font-size: 11px; flex: 1;">Biriktirish</button>
+                                <button onclick="openUploadModal({{ $tenant->id }}, 'files')" class="btn-ios" style="padding: 5px 10px; font-size: 11px; flex: 1;">Fayllar</button>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- UI MODALS -->
@@ -776,6 +872,27 @@
         </div>
     </div>
 
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal-overlay" onclick="if(event.target === this) closeUploadModal()">
+        <div class="glass-modal">
+            <div class="modal-title">
+                <i class="fa-solid fa-cloud-arrow-up"></i> <span id="uploadModalHeader">Fayl Biriktirish</span>
+            </div>
+            <form id="uploadForm">
+                <input type="hidden" id="upload_tenant_id">
+                <input type="hidden" id="upload_type">
+                <div class="form-group">
+                    <label>Faylni tanlang (PDF, JPG, PNG)</label>
+                    <input type="file" id="upload_file" class="form-control" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Yuklash</button>
+                    <button type="button" class="btn-ios" onclick="closeUploadModal()" style="flex: 1;">Bekor qilish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const API_PREFIX = '/api';
         
@@ -835,6 +952,52 @@
                 if(data.status === 'success') location.reload();
             } catch(e) { }
         }
+
+        // Leads
+        async function updateLeadStatus(id, status) {
+            try {
+                let res = await fetch(`${API_PREFIX}/leads/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ status })
+                });
+                if(res.ok) simulateAIAction("Lead holati yangilandi.");
+            } catch(e) {}
+        }
+
+        // Upload
+        function openUploadModal(tenantId, type) {
+            document.getElementById('upload_tenant_id').value = tenantId;
+            document.getElementById('upload_type').value = type;
+            document.getElementById('uploadModalHeader').innerText = type === 'contract' ? "Shartnomani Yuklash" : "Mijoz Fayllari";
+            document.getElementById('uploadModal').classList.add('active');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let fd = new FormData();
+            fd.append('file', document.getElementById('upload_file').files[0]);
+            fd.append('type', document.getElementById('upload_type').value);
+            
+            let tenantId = document.getElementById('upload_tenant_id').value;
+            
+            try {
+                let res = await fetch(`${API_PREFIX}/tenants/${tenantId}/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: fd
+                });
+                if(res.ok) {
+                    simulateAIAction("Fayl muvaffaqiyatli saqlandi.");
+                    closeUploadModal();
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch(e) { }
+        });
 
         // Subscriptions
         function openSubModal(id) {

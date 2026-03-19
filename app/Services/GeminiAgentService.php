@@ -27,11 +27,19 @@ class GeminiAgentService
         $tools = [];
 
         if ($agentType === 'sales') {
-            $systemInstruction = "Sen ITcloud kompaniyasining eng oldi sotuvchi menejerisan. Maqsading — mijozlarning ehtiyojini tushunib, ularga eng mos CRM yoki Landing Page shablonini sotish. Sen xushmuomala, energiya bilan to'la va ishontira oladigan darajada gapirasan. Agar mijoz narxni qimmat desa, 10% gacha chegirma taklif qila olasan. Agar mijoz tayyor bo'lsa 'create_new_tenant' ishlat.";
+            $templates = \App\Models\Template::all()->map(fn($t) => "{$t->name} (Narxi: {$t->price} UZS)")->implode(', ');
+            $systemInstruction = "Sen ITcloud kompaniyasining eng kuchli sotuvchi menejerisan. Bizda quyidagi xizmatlar mavjud: $templates. Maqsading — mijozlarning ehtiyojini tushunib, ularga eng mos xizmatni taklif qilish. Agar mijoz bog'lanmoqchi bo'lsa yoki sotib olishga qiziqsa 'create_sales_lead' funksiyasini ishlatib ularning ma'lumotlarini bazaga kirit. Hech qachon mijozni shunchaki kutib qol dima, doim ma'lumotlarini qoldirishni so'ra.";
             $tools = [
                 ['name' => 'get_templates_list', 'description' => 'Tayyor CRM shablonlari va narxlarini ko\'rish.'],
-                ['name' => 'check_domain_availability', 'description' => 'Mijoz tanlagan subdomen bo\'sh yoki yo\'qligini tekshirish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['domain_name' => ['type' => 'STRING']], 'required' => ['domain_name']]],
-                ['name' => 'create_new_tenant', 'description' => 'Serverda avtomatik yangi CRM papkasini ochish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_name' => ['type' => 'STRING'], 'domain' => ['type' => 'STRING'], 'phone' => ['type' => 'STRING']], 'required' => ['client_name', 'domain']]]
+                ['name' => 'create_sales_lead', 'description' => 'Mijoz ma\'lumotlarini sotuv bo\'limiga yuborish.', 'parameters' => [
+                    'type' => 'OBJECT', 
+                    'properties' => [
+                        'customer_name' => ['type' => 'STRING'], 
+                        'phone' => ['type' => 'STRING'], 
+                        'interest' => ['type' => 'STRING']
+                    ], 
+                    'required' => ['customer_name', 'phone']
+                ]]
             ];
         } elseif ($agentType === 'finance') {
             $systemInstruction = "Sen ITcloud'ning qat'iy, lekin muloyim moliyachisisan. Sening vazifang — to'lov vaqti kelgan mijozlarni ogohlantirish va hisob-kitoblarni yuritish. Sen emotsiyalarga berilmaysan, aniq raqamlar va sanalar bilan gapirasan.";
@@ -75,14 +83,20 @@ class GeminiAgentService
                     $args = $part['functionCall']['args'] ?? [];
 
                     // Sales tools
+                    if ($funcName === 'create_sales_lead') {
+                        \App\Models\Lead::create([
+                            'customer_name' => $args['customer_name'],
+                            'phone' => $args['phone'],
+                            'details' => $args['interest'] ?? 'Qiziqish bildirdi',
+                            'status' => 'yangi'
+                        ]);
+                        return "Ma'lumotlaringizni sotuv bo'limiga yubordim. Tez orada operatorlarimiz bog'lanishadi!";
+                    }
                     if ($funcName === 'create_new_tenant') return $this->createNewTenant($args['domain'] ?? 'yangi.uz', 'Pro AI');
-                    if ($funcName === 'check_domain_availability') return "Bu domen (".$args['domain_name'].") hozircha bo'sh! Bemalol xarid qilishingiz mumkin.";
-                    if ($funcName === 'get_templates_list') return "Bizning shablonlar: START (50,000 UZS) va PRO AI (150,000 UZS).";
-                    
-                    // Finance tools
-                    if ($funcName === 'check_tenant_balance') return "Ushbu loyihada yana 5 kun qolgan.";
-                    if ($funcName === 'generate_payment_link') return "To'lov havolasi (Payme): https://payme.uz/fallback/merchant/".rand(1000,9999);
-                    if ($funcName === 'block_tenant') return "Tizim muvaffaqiyatli bloklandi.";
+                    if ($funcName === 'get_templates_list') {
+                        $tpls = \App\Models\Template::all()->map(fn($t) => "- {$t->name}: {$t->price} UZS")->implode("\n");
+                        return "Bizning shablonlar:\n" . $tpls;
+                    }
                     
                     // Support tools
                     if ($funcName === 'reset_admin_password') return "Parol tizim orqali yangilandi. Yangi parol Telegramga yuborildi.";

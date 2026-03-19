@@ -15,23 +15,30 @@ class TelegramWebhookController extends Controller
         $this->aiAgent = $aiAgent;
     }
 
-    public function handle(Request $request)
+    public function handle(Request $request, $token)
     {
+        $bot = \App\Models\TelegramBot::where('token', $token)->first();
+        if (!$bot) return response()->json(['status' => 'error', 'message' => 'Bot not found']);
+
         $message = $request->input('message.text', '');
         $chatId = $request->input('message.chat.id', '');
         
-        // Oddiy mantiq: botni tanib olish uchun "agentType"
-        // Aslida turli xil bot tokenlari yoki state orqali qaysi agent o'qiyotgani aniqlanadi.
-        // Hozir mock uchun biz birinchi so'zni agent tipi sifatida ishlatamiz!
-        // Masalan: "sales Sotib olaman", yoki webhook request payloadidan olamiz.
-        
-        $type = $request->input('agent_type', 'sales'); // Default sales agent
+        if (empty($message)) return response()->json(['status' => 'ignored']);
 
-        $response = $this->aiAgent->handleIncomingMessage($type, $message, $chatId);
+        // AI Agentdan javob olish
+        $response = $this->aiAgent->handleIncomingMessage($bot->agent_type, $message, $chatId);
+
+        // Telegramga javob qaytarish
+        $url = "https://api.telegram.org/bot{$token}/sendMessage";
+        \Illuminate\Support\Facades\Http::post($url, [
+            'chat_id' => $chatId,
+            'text' => $response,
+            'parse_mode' => 'Markdown'
+        ]);
 
         return response()->json([
             'status' => 'success',
-            'agent_reply' => $response
+            'sent' => true
         ]);
     }
 }

@@ -6,7 +6,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Middleware\CheckFaceId;
 use App\Http\Middleware\CheckTailscaleIP;
 
-// Protect all routes with Tailscale IP check
+// Dynamic Telegram Webhook
+Route::post('/api/webhook/telegram/{token}', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'handle']);
+
+// Protect admin routes with Tailscale IP check
 Route::middleware([CheckTailscaleIP::class])->group(function () {
 
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -26,6 +29,22 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         Route::put('/api/tenants/{id}', [\App\Http\Controllers\Api\TenantController::class, 'update']);
         Route::patch('/api/tenants/{id}/status', [\App\Http\Controllers\Api\TenantController::class, 'changeStatus']);
         Route::post('/api/tenants/{id}/subscription', [\App\Http\Controllers\Api\TenantController::class, 'addSubscription']);
+        Route::post('/api/tenants/{id}/upload', function(\Illuminate\Http\Request $request, $id) {
+            $tenant = \App\Models\Tenant::findOrFail($id);
+            $type = $request->input('type'); // contract or files
+            if ($request->hasFile('file')) {
+                $path = $request->file('file')->store('tenant_docs', 'public');
+                if ($type === 'contract') {
+                    $tenant->contract_path = $path;
+                } else {
+                    $files = $tenant->files ?? [];
+                    $files[] = $path;
+                    $tenant->files = $files;
+                }
+                $tenant->save();
+            }
+            return response()->json(['status' => 'success']);
+        });
 
         // Templates API
         Route::post('/api/templates', [\App\Http\Controllers\Api\TemplateController::class, 'store']);
@@ -35,6 +54,12 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         Route::post('/api/bots', [\App\Http\Controllers\Api\TelegramBotController::class, 'store']);
         Route::put('/api/bots/{id}', [\App\Http\Controllers\Api\TelegramBotController::class, 'update']);
         Route::delete('/api/bots/{id}', [\App\Http\Controllers\Api\TelegramBotController::class, 'destroy']);
+
+        // Leads API
+        Route::patch('/api/leads/{id}/status', function(\Illuminate\Http\Request $request, $id) {
+            \App\Models\Lead::where('id', $id)->update(['status' => $request->status]);
+            return response()->json(['status' => 'success']);
+        });
 
         // Employees API
         Route::post('/api/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'store']);
