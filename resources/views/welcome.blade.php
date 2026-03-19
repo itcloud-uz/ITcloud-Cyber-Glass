@@ -160,6 +160,96 @@
             .dynamic-island { width: 90%; }
         }
     </style>
+    <style>
+        /* Custom Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .glass-modal {
+            width: 500px;
+            padding: 40px;
+            background: rgba(20, 20, 25, 0.7);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border-radius: 20px;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .glass-modal {
+            transform: translateY(0);
+        }
+        .modal-title {
+            font-size: 24px;
+            color: var(--neon-cyan);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .form-control:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 255, 242, 0.1);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .service-link-badge {
+            background: rgba(0, 255, 242, 0.1);
+            color: var(--neon-cyan);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            border: 1px solid rgba(0, 255, 242, 0.2);
+        }
+        .iframe-container {
+            width: 100%;
+            height: 500px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            margin-top: 20px;
+            background: #fff;
+        }
+    </style>
 </head>
 <body>
 
@@ -460,26 +550,43 @@
         </div>
 
         <div id="templates" class="view-section">
-            <h2 style="margin-bottom: 25px;">Shablonlar Fabrikasi</h2>
-            <div class="stats-grid">
+            <h2 style="margin-bottom: 25px;">Shablonlar Fabrikasi (Managed Services)</h2>
+            <div class="stats-grid" id="templates-grid">
                 @if(isset($templates))
                     @foreach($templates as $template)
-                    <div class="glass-panel stat-card" style="padding: 30px;">
-                        <button onclick="deleteTemplate({{ $template->id }})" style="position:absolute; top:10px; right:10px; background:transparent; border:none; color:var(--neon-pink); cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
-                        <h3 style="color: var(--neon-cyan); margin-bottom: 10px;">{{ $template->name }}</h3>
-                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5;">{{ $template->description }}</p>
-                        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">{{ number_format($template->price, 0) }} UZS</div>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn-ios btn-neon" style="flex:1;">Tahrirlash</button>
-                            <a href="{{ $template->preview_url }}" target="_blank" class="btn-ios" style="display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); color: white; border:1px solid #fff;"><i class="fa-solid fa-eye"></i></a>
+                    <div class="glass-panel stat-card" style="padding: 30px; position: relative; overflow: hidden; height: auto;">
+                        <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--neon-cyan);"></div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <h3 style="color: var(--neon-cyan);">{{ $template->name }}</h3>
+                            <button onclick="deleteTemplate({{ $template->id }})" class="btn-icon" style="color: var(--neon-pink); opacity: 0.6;"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+
+                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; min-height: 42px;">{{ $template->description }}</p>
+                        
+                        <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                            <span class="service-link-badge"><i class="fa-solid fa-link"></i> {{ parse_url($template->preview_url, PHP_URL_HOST) }}</span>
+                            <span style="font-weight: bold; font-size: 18px;">{{ number_format($template->price, 0) }} UZS</span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 45px; gap: 10px;">
+                            <button class="btn-ios btn-neon" onclick="manageTemplate({{ $template->id }}, '{{ $template->preview_url }}')">
+                                <i class="fa-solid fa-sliders"></i> Boshqarish
+                            </button>
+                            <a href="{{ $template->preview_url }}" target="_blank" class="btn-ios" style="display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
                         </div>
                     </div>
                     @endforeach
                 @endif
-                <!-- Add new template card -->
-                <div class="glass-panel stat-card" onclick="promptAddTemplate()" style="display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px dashed var(--glass-border); background: transparent;">
-                    <i class="fa-solid fa-plus" style="font-size: 40px; color: var(--text-muted); margin-bottom: 15px;"></i>
-                    <h3 style="color: var(--text-muted);">Yangi shablon qo'shish</h3>
+                
+                <div class="glass-panel stat-card" onclick="openTemplateModal()" style="display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px dashed rgba(0, 255, 242, 0.3); background: rgba(0, 255, 242, 0.02); min-height: 250px;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 255, 242, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <i class="fa-solid fa-plus-circle" style="font-size: 30px; color: var(--neon-cyan);"></i>
+                    </div>
+                    <h3 style="color: var(--neon-cyan); opacity: 0.8;">Yangi Shablon / Sayt</h3>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: center;">Yangi CRM yoki Landing ulaymiz</p>
                 </div>
             </div>
         </div>
@@ -530,42 +637,191 @@
 
     </main>
 
+    <!-- UI MODALS -->
+    <div id="templateModal" class="modal-overlay" onclick="if(event.target === this) closeTemplateModal()">
+        <div class="glass-modal">
+            <div class="modal-title">
+                <i class="fa-solid fa-cube"></i> <span id="modalHeaderText">Yangi Shablon Sozlamalari</span>
+            </div>
+            <form id="templateForm">
+                <div class="form-group">
+                    <label>Shablon / Sayt nomi</label>
+                    <input type="text" id="tpl_name" class="form-control" placeholder="Masalan: Delta CRM v2" required>
+                </div>
+                <div class="form-group">
+                    <label>Tafsilotlar (Qisqa tavsif)</label>
+                    <textarea id="tpl_desc" class="form-control" style="height: 80px;" placeholder="Tizim nimalar qila olishi haqida..." required></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Sotuv Narxi (UZS)</label>
+                        <input type="number" id="tpl_price" class="form-control" placeholder="150000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preview URL (Havola)</label>
+                        <input type="url" id="tpl_preview" class="form-control" placeholder="https://..." required>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Saqlash va Tasdiqlash</button>
+                    <button type="button" class="btn-ios" onclick="closeTemplateModal()" style="flex: 1;">Bekor qilish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Management Modal -->
+    <div id="manageModal" class="modal-overlay" onclick="if(event.target === this) closeManageModal()">
+        <div class="glass-modal" style="width: 80%; max-width: 1000px;">
+            <div class="modal-title" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <i class="fa-solid fa-gauge-high"></i> <span id="manageTitle">Xizmatni Boshqarish</span>
+                </div>
+                <button onclick="closeManageModal()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <p id="manageSubtitle" style="color: var(--text-muted); font-size: 13px;"></p>
+            <div class="iframe-container">
+                <iframe id="manageIframe" src="" style="width:100%; height:100%; border:none;"></iframe>
+            </div>
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn-ios" onclick="window.open(document.getElementById('manageIframe').src, '_blank')"><i class="fa-solid fa-external-link"></i> Alohida oynada ochish</button>
+                <button class="btn-ios btn-neon" onclick="closeManageModal()">Yopish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bot Modal -->
+    <div id="botModal" class="modal-overlay" onclick="if(event.target === this) closeBotModal()">
+        <div class="glass-modal">
+            <div class="modal-title">
+                <i class="fa-brands fa-telegram"></i> <span id="botModalHeader">Yangi Telegram Bot</span>
+            </div>
+            <form id="botForm">
+                <input type="hidden" id="edit_bot_id">
+                <div class="form-group">
+                    <label>Bot Nomi</label>
+                    <input type="text" id="bot_name" class="form-control" placeholder="Masalan: ITcloud Sales Bot" required>
+                </div>
+                <div class="form-group">
+                    <label>Telegram API Token</label>
+                    <input type="text" id="bot_token" class="form-control" placeholder="123456:ABC-DEF..." required>
+                </div>
+                <div class="form-group">
+                    <label>AI Agent Rollari (Vazifasi)</label>
+                    <select id="bot_agent_type" class="form-control">
+                        <option value="sales">Sales (Sotuvchi)</option>
+                        <option value="finance">Finance (Hisobchi)</option>
+                        <option value="support">Support (Texnik Yordam)</option>
+                        <option value="custom">Custom (Maxsus)</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Botni Faollashtirish</button>
+                    <button type="button" class="btn-ios" onclick="closeBotModal()" style="flex: 1;">Bekor qilish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tenant Modal -->
+    <div id="tenantModal" class="modal-overlay" onclick="if(event.target === this) closeTenantModal()">
+        <div class="glass-modal">
+            <div class="modal-title">
+                <i class="fa-solid fa-briefcase"></i> <span id="tenantModalHeader">Mijoz Sozlamalari</span>
+            </div>
+            <form id="tenantForm">
+                <input type="hidden" id="edit_tenant_id">
+                <div class="form-group">
+                    <label>Kompaniya Nomi</label>
+                    <input type="text" id="tenant_company" class="form-control" placeholder="Masalan: Delta CRM" required>
+                </div>
+                <div class="form-group">
+                    <label>Subdomen / Domain</label>
+                    <input type="text" id="tenant_domain" class="form-control" placeholder="delta.itcloud.uz" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Saqlash</button>
+                    <button type="button" class="btn-ios" onclick="closeTenantModal()" style="flex: 1;">Orqaga</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Subscription Modal -->
+    <div id="subModal" class="modal-overlay" onclick="if(event.target === this) closeSubModal()">
+        <div class="glass-modal">
+            <div class="modal-title">
+                <i class="fa-solid fa-calendar-check"></i> Obunani Uzaytirish
+            </div>
+            <form id="subForm">
+                <input type="hidden" id="sub_tenant_id">
+                <div class="form-group">
+                    <label>Muddat (kunlarda)</label>
+                    <select id="sub_duration" class="form-control">
+                        <option value="30">30 Kun (1 Oy)</option>
+                        <option value="90">90 Kun (3 Oy)</option>
+                        <option value="365">365 Kun (1 Yil)</option>
+                        <option value="infinity">Cheksiz (Infinity)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>To'lov Summasi (UZS)</label>
+                    <input type="number" id="sub_amount" class="form-control" value="150000">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Tasdiqlash</button>
+                    <button type="button" class="btn-ios" onclick="closeSubModal()" style="flex: 1;">Bekor qilish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const API_PREFIX = '/api';
         
-        // Mijoz qo'shish prompt
-        async function promptAddTenant() {
-            let company = prompt("Yangi kompaniya/mijoz nomini kiriting:");
-            if(!company) return;
-            let domain = prompt("Mijoz uchun qisqa domen kiriting (masalan: newcrm.itcloud.uz):");
-            if(!domain) return;
-            
-            try {
-                let res = await fetch(`${API_PREFIX}/tenants`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ company_name: company, domain: domain })
-                });
-                let data = await res.json();
-                if(data.status === 'success') location.reload();
-            } catch(e) { alert("Xatolik"); }
+        // Mijoz (Tenant) Modal
+        function openTenantModal(id = null, company = '', domain = '') {
+            document.getElementById('edit_tenant_id').value = id || '';
+            document.getElementById('tenant_company').value = company;
+            document.getElementById('tenant_domain').value = domain;
+            document.getElementById('tenantModalHeader').innerText = id ? "Mijozni Tahrirlash" : "Yangi Mijoz Qo'shish";
+            document.getElementById('tenantModal').classList.add('active');
         }
 
-        async function promptEditTenant(id, oldCompany, oldDomain) {
-            let company = prompt("Kompaniya nomi:", oldCompany);
-            if(!company) return;
-            let domain = prompt("Domen nomi:", oldDomain);
-            if(!domain) return;
+        function closeTenantModal() {
+            document.getElementById('tenantModal').classList.remove('active');
+        }
+
+        document.getElementById('tenantForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let id = document.getElementById('edit_tenant_id').value;
+            let company_name = document.getElementById('tenant_company').value;
+            let domain = document.getElementById('tenant_domain').value;
             
+            let url = id ? `${API_PREFIX}/tenants/${id}` : `${API_PREFIX}/tenants`;
+            let method = id ? 'PUT' : 'POST';
+
             try {
-                let res = await fetch(`${API_PREFIX}/tenants/${id}`, {
-                    method: 'PUT',
+                let res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ company_name: company, domain: domain })
+                    body: JSON.stringify({ company_name, domain })
                 });
                 let data = await res.json();
-                if(data.status === 'success') location.reload();
-            } catch(e) { }
+                if(data.status === 'success') {
+                    simulateAIAction(id ? "Mijoz ma'lumotlari yangilandi." : "Yangi loyiha muvaffaqiyatli ishga tushirildi!");
+                    closeTenantModal();
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch(e) { alert("Xato yuz berdi"); }
+        });
+
+        function promptAddTenant() {
+            openTenantModal();
+        }
+
+        function promptEditTenant(id, company, domain) {
+            openTenantModal(id, company, domain);
         }
 
         async function changeTenantStatus(id, newStatus) {
@@ -580,18 +836,39 @@
             } catch(e) { }
         }
 
-        async function promptSubscription(id) {
-            let plan = prompt("Tarif muddatini tanlang: (Kun yozing, masalan 30, aylikka yoxud 'infinity' cheksiz deb yozing)", "30");
-            if(!plan) return;
+        // Subscriptions
+        function openSubModal(id) {
+            document.getElementById('sub_tenant_id').value = id;
+            document.getElementById('subModal').classList.add('active');
+        }
+
+        function closeSubModal() {
+            document.getElementById('subModal').classList.remove('active');
+        }
+
+        document.getElementById('subForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let id = document.getElementById('sub_tenant_id').value;
+            let duration = document.getElementById('sub_duration').value;
+            let amount = document.getElementById('sub_amount').value;
+
             try {
                 let res = await fetch(`${API_PREFIX}/tenants/${id}/subscription`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ duration: plan, amount: 150000 })
+                    body: JSON.stringify({ duration, amount })
                 });
                 let data = await res.json();
-                if(data.status === 'success') location.reload();
+                if(data.status === 'success') {
+                    simulateAIAction("Obuna muddati uzaytirildi. Xizmat faol!");
+                    closeSubModal();
+                    setTimeout(() => location.reload(), 1500);
+                }
             } catch(e) { }
+        });
+
+        function promptSubscription(id) {
+            openSubModal(id);
         }
 
         async function submitEmployee() {
@@ -624,24 +901,49 @@
             } catch(e) { alert("Xatolik. Rasm hajmi juda katta bo'lishi mumkin."); }
         }
 
-        // Templates Management
-        async function promptAddTemplate() {
-            let name = prompt("Shablon nomi:");
-            if(!name) return;
-            let desc = prompt("Tavsif:");
-            let price = prompt("Narxi (raqamda):");
-            if(!price) return;
-            let preview = prompt("Preview URL:");
+        // Templates Management UI
+        function openTemplateModal() {
+            document.getElementById('templateModal').classList.add('active');
+            document.getElementById('templateForm').reset();
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('templateModal').classList.remove('active');
+        }
+
+        document.getElementById('templateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let name = document.getElementById('tpl_name').value;
+            let description = document.getElementById('tpl_desc').value;
+            let price = document.getElementById('tpl_price').value;
+            let preview_url = document.getElementById('tpl_preview').value;
 
             try {
                 let res = await fetch(`${API_PREFIX}/templates`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ name, description: desc, price, preview_url: preview })
+                    body: JSON.stringify({ name, description, price, preview_url })
                 });
                 let data = await res.json();
-                if(data.status === 'success') location.reload();
-            } catch(e) { alert("Xato"); }
+                if(data.status === 'success') {
+                    simulateAIAction("Yangi shablon tizimga muvaffaqiyatli ulandi!");
+                    closeTemplateModal();
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch(e) { alert("Server bilan aloqa xatosi"); }
+        });
+
+        function manageTemplate(id, url) {
+            simulateAIAction("Loyiha boshqaruv paneliga ulanmoqda...");
+            document.getElementById('manageTitle').innerText = "Live Preview & Management";
+            document.getElementById('manageSubtitle').innerText = "Hozirda ulanayotgan manzil: " + url;
+            document.getElementById('manageIframe').src = url;
+            document.getElementById('manageModal').classList.add('active');
+        }
+
+        function closeManageModal() {
+            document.getElementById('manageModal').classList.remove('active');
+            document.getElementById('manageIframe').src = "";
         }
 
         async function deleteTemplate(id) {
@@ -655,24 +957,51 @@
             } catch(e) { }
         }
 
-        // Bot Management
-        async function promptAddBot() {
-            let name = prompt("Bot nomi (masalan: Sotuvchi Bot):");
-            if(!name) return;
-            let token = prompt("Telegram API Token:");
-            if(!token) return;
-            let type = prompt("Agent turi (sales, finance, support, custom):", "sales");
+        // Bot Management UI
+        function openBotModal(id = null, name = '', token = '', type = 'sales') {
+            document.getElementById('edit_bot_id').value = id || '';
+            document.getElementById('bot_name').value = name;
+            document.getElementById('bot_token').value = token;
+            document.getElementById('bot_agent_type').value = type;
+            document.getElementById('botModalHeader').innerText = id ? "Botni Tahrirlash" : "Yangi AI Bot Qo'shish";
+            document.getElementById('botModal').classList.add('active');
+        }
+
+        function closeBotModal() {
+            document.getElementById('botModal').classList.remove('active');
+        }
+
+        document.getElementById('botForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let id = document.getElementById('edit_bot_id').value;
+            let name = document.getElementById('bot_name').value;
+            let token = document.getElementById('bot_token').value;
+            let agent_type = document.getElementById('bot_agent_type').value;
+
+            let url = id ? `${API_PREFIX}/bots/${id}` : `${API_PREFIX}/bots`;
+            let method = id ? 'PUT' : 'POST';
 
             try {
-                let res = await fetch(`${API_PREFIX}/bots`, {
-                    method: 'POST',
+                let res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ name, token, agent_type: type, is_active: 1 })
+                    body: JSON.stringify({ name, token, agent_type, is_active: 1 })
                 });
                 let data = await res.json();
-                if(data.status === 'success') location.reload();
-                else alert("Xato: " + JSON.stringify(data.message));
-            } catch(e) { alert("Xatolik yuz berdi"); }
+                if(data.status === 'success') {
+                    simulateAIAction(id ? "Bot muvaffaqiyatli yangilandi." : "Yangi AI Bot faollashtirildi!");
+                    closeBotModal();
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch(e) { }
+        });
+
+        function promptAddBot() {
+            openBotModal();
+        }
+
+        function promptEditBot(id, name, token, type) {
+            openBotModal(id, name, token, type);
         }
 
         async function toggleBot(id, status) {
@@ -683,24 +1012,6 @@
                     body: JSON.stringify({ is_active: status })
                 });
                 location.reload();
-            } catch(e) { }
-        }
-
-        async function promptEditBot(id, oldName, oldToken, oldType) {
-            let name = prompt("Bot nomi:", oldName);
-            if(!name) return;
-            let token = prompt("API Token:", oldToken);
-            if(!token) return;
-            let type = prompt("Agent turi (sales, finance, support, custom):", oldType);
-            
-            try {
-                let res = await fetch(`${API_PREFIX}/bots/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ name, token, agent_type: type })
-                });
-                let data = await res.json();
-                if(data.status === 'success') location.reload();
             } catch(e) { }
         }
 
@@ -738,23 +1049,27 @@
         }
 
         // Dynamic Island (Sun'iy Intelekt xabarnomasi) animatsiyasi
-        function simulateAIAction() {
+        function simulateAIAction(customText = null) {
             const island = document.getElementById('dynamicIsland');
             const text = document.getElementById('islandText');
             
             island.classList.add('active');
-            text.innerHTML = "Agent Gemini: Mijoz bilan suhbat qilinmoqda...";
+            text.innerHTML = customText || "Agent Gemini: Mijoz bilan suhbat qilinmoqda...";
             text.style.color = "var(--neon-cyan)";
             
             // 3 soniyadan keyin qaytish
             setTimeout(() => {
-                text.innerHTML = "To'lov qabul qilindi!";
-                text.style.color = "var(--neon-purple)";
+                if(!customText) {
+                    text.innerHTML = "To'lov qabul qilindi!";
+                    text.style.color = "var(--neon-purple)";
+                }
                 
                 setTimeout(() => {
                     island.classList.remove('active');
-                    text.innerHTML = "Obsidian OS v1";
-                    text.style.color = "var(--text-main)";
+                    setTimeout(() => {
+                        text.innerHTML = "Obsidian OS v1";
+                        text.style.color = "var(--text-main)";
+                    }, 300);
                 }, 2000);
             }, 3000);
         }
