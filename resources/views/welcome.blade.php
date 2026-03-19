@@ -599,30 +599,35 @@
         <div id="ai-hub" class="view-section">
             <h2 style="margin-bottom: 25px;">Gemini AI Agentlar Markazi</h2>
             
-            <div class="content-row">
-                <div class="glass-panel" style="padding: 30px;">
-                    <h3 style="margin-bottom: 20px; color: var(--neon-cyan);">Sotuv Agenti Sozlamalari</h3>
-                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
-                        Bu agent ijtimoiy tarmoqlar orqali kelgan mijozlar bilan gaplashadi va ularga to'g'ridan-to'g'ri CRM yaratib beradi.
-                    </p>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--glass-border);">
+            <div class="glass-panel" style="padding: 25px; margin-bottom: 25px;">
+                <p style="color: var(--text-muted); font-size: 14px;">Ushbu bo'limda siz AI agentlarga biznesingizning turli bo'limlari (Sotuv, Moliya, Texnik yordam) bo'yicha maxsus vazifalar bera olasiz va ular bilan to'g'ridan-to'g'ri suhbatlashasiz.</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                @foreach($telegramBots as $bot)
+                <div class="glass-panel" style="padding: 25px; border-top: 4px solid {{ $bot->agent_type == 'sales' ? 'var(--neon-cyan)' : ($bot->agent_type == 'finance' ? 'var(--neon-purple)' : 'var(--neon-pink)') }};">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                         <div>
-                            <b>Avto-Deploy (Serverda papka ochish)</b>
-                            <div style="font-size: 12px; color: var(--text-muted);">Mijoz rozi bo'lsa darhol Nginx'da subdomen ochadi</div>
+                            <h3 style="color: white; margin-bottom: 5px;">{{ $bot->name }}</h3>
+                            <span class="badge" style="background: rgba(255,255,255,0.05);">{{ strtoupper($bot->agent_type) }} UNIT</span>
                         </div>
-                        <div class="ios-toggle on" onclick="this.classList.toggle('on')"></div>
+                        <div class="status-badge {{ $bot->is_active ? 'status-active' : 'status-blocked' }}" style="font-size: 10px;">{{ $bot->is_active ? 'ONLINE' : 'OFFLINE' }}</div>
                     </div>
                     
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0;">
-                        <div>
-                            <b>Chegirma berish huquqi</b>
-                            <div style="font-size: 12px; color: var(--text-muted);">Mijoz tortishsa 10% gacha chegirma qila oladi</div>
-                        </div>
-                        <div class="ios-toggle" onclick="this.classList.toggle('on')"></div>
+                    <div style="margin-bottom: 15px; font-size: 13px; color: var(--text-muted); min-height: 40px;">
+                        <b>Hozirgi vazifasi:</b> {{ $bot->current_task ?? 'Hech qanday maxsus vazifa yo\'q. Standart rejimda ishlamoqda.' }}
                     </div>
-                    
-                    <button class="btn-ios btn-neon" style="width: 100%; margin-top: 20px; padding: 15px;"><i class="fa-solid fa-robot"></i> Agentni Sinab ko'rish</button>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button onclick="openTaskModal({{ $bot->id }}, '{{ $bot->name }}', '{{ $bot->current_task }}')" class="btn-ios" style="background: rgba(176,38,255,0.1); border-color: rgba(176,38,255,0.3); color: var(--neon-purple);"><i class="fa-solid fa-list-check"></i> Topshiriq</button>
+                        <button onclick="openAiChat({{ $bot->id }}, '{{ $bot->name }}')" class="btn-ios btn-neon"><i class="fa-solid fa-comments"></i> Chat</button>
+                    </div>
+                </div>
+                @endforeach
+
+                <div class="glass-panel" onclick="switchTab('bot-manager')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px dashed rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); min-height: 200px;">
+                    <i class="fa-solid fa-plus-circle" style="font-size: 30px; opacity: 0.3; margin-bottom: 10px;"></i>
+                    <div style="color: var(--text-muted);">Yangi Agent Qo'shish</div>
                 </div>
             </div>
         </div>
@@ -996,6 +1001,47 @@
                     <button type="button" class="btn-ios" onclick="closeUploadModal()" style="flex: 1;">Bekor qilish</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- AI Task Modal -->
+    <div id="aiTaskModal" class="modal-overlay" onclick="if(event.target === this) closeTaskModal()">
+        <div class="glass-modal">
+            <div class="modal-title">
+                <i class="fa-solid fa-clipboard-list"></i> <span id="taskAgentName">Agent</span> uchun yangi vazifa
+            </div>
+            <form id="aiTaskForm">
+                <input type="hidden" id="task_bot_id">
+                <div class="form-group">
+                    <label>Agent nima qilishi kerak? (Muntazam vazifa)</label>
+                    <textarea id="task_text" class="form-control" style="height: 120px;" placeholder="Masalan: Faqat Toshkent shahri mijozlariga xizmat ko'rsat. Agar mijoz viloyatdan bo'lsa, ularni operatorga yo'naltir." required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Vazifani topshirish</button>
+                    <button type="button" class="btn-ios" onclick="closeTaskModal()" style="flex: 1;">Bekor qilish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Chat Modal (Individual Chat) -->
+    <div id="aiChatModal" class="modal-overlay" onclick="if(event.target === this) closeAiChat()">
+        <div class="glass-modal" style="max-width: 500px; height: 600px; display: flex; flex-direction: column;">
+            <div class="modal-title" style="display: flex; justify-content: space-between;">
+                <span><i class="fa-solid fa-comments"></i> Chat: <span id="chatAgentName">Agent</span></span>
+                <button onclick="closeAiChat()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.2); border-radius: 10px; margin: 10px 0;">
+                <!-- Messages -->
+                <div style="background: rgba(0,255,242,0.1); padding: 10px; border-radius: 10px 10px 10px 0; align-self: flex-start; max-width: 80%; font-size: 14px;">
+                    Salom! Men tayyorman. Menga har qanday savol bering yoki buyruq bering.
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <input type="hidden" id="chat_bot_id">
+                <input type="text" id="chatInput" class="form-control" placeholder="Xabaringizni yozing..." style="flex: 1;" onkeypress="if(event.key==='Enter') sendAiMessage()">
+                <button onclick="sendAiMessage()" class="btn-ios btn-neon" style="width: 50px;"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
         </div>
     </div>
 
@@ -1453,6 +1499,80 @@
 
             // Save to storage
             localStorage.setItem('activeTab', tabId);
+        }
+
+        // AI Agent Hub Features
+        function openTaskModal(botId, name, currentTask) {
+            document.getElementById('task_bot_id').value = botId;
+            document.getElementById('taskAgentName').innerText = name;
+            document.getElementById('task_text').value = currentTask !== 'null' ? currentTask : '';
+            document.getElementById('aiTaskModal').classList.add('active');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('aiTaskModal').classList.remove('active');
+        }
+
+        document.getElementById('aiTaskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const botId = document.getElementById('task_bot_id').value;
+            const task = document.getElementById('task_text').value;
+
+            try {
+                let res = await fetch(`${API_PREFIX}/bots/${botId}/task`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ task })
+                });
+                if((await res.json()).status === 'success') {
+                    simulateAIAction("Agent yangi vazifani qabul qildi!");
+                    closeTaskModal();
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch(e) { }
+        });
+
+        function openAiChat(botId, name) {
+            document.getElementById('chat_bot_id').value = botId;
+            document.getElementById('chatAgentName').innerText = name;
+            document.getElementById('chatMessages').innerHTML = `<div style="background: rgba(0,255,242,0.1); padding: 10px; border-radius: 10px 10px 10px 0; align-self: flex-start; max-width: 80%; font-size: 14px;">Salom! Men ${name}man. Sizga qanday yordam bera olaman?</div>`;
+            document.getElementById('aiChatModal').classList.add('active');
+        }
+
+        function closeAiChat() {
+            document.getElementById('aiChatModal').classList.remove('active');
+        }
+
+        async function sendAiMessage() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            const botId = document.getElementById('chat_bot_id').value;
+            if(!msg) return;
+
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px 10px 0 10px; align-self: flex-end; max-width: 80%; font-size: 14px;">${msg}</div>`;
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Loading state
+            const loadingId = 'ai_loading_' + Date.now();
+            chatMessages.innerHTML += `<div id="${loadingId}" style="background: rgba(0,255,242,0.05); padding: 10px; border-radius: 10px 10px 10px 0; align-self: flex-start; max-width: 80%; font-size: 12px; font-style: italic;">Agent Gemini javob bermoqda...</div>`;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                let res = await fetch(`${API_PREFIX}/ai/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ bot_id: botId, message: msg })
+                });
+                let data = await res.json();
+                document.getElementById(loadingId).remove();
+                chatMessages.innerHTML += `<div style="background: rgba(0,255,242,0.1); padding: 10px; border-radius: 10px 10px 10px 0; align-self: flex-start; max-width: 80%; font-size: 14px;">${data.reply}</div>`;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } catch(e) { 
+                document.getElementById(loadingId).remove();
+                chatMessages.innerHTML += `<div style="color: var(--neon-pink); font-size: 12px;">Xatolik: Ulanib bo'lmadi.</div>`;
+            }
         }
 
         // Dynamic Island (Sun'iy Intelekt xabarnomasi) animatsiyasi

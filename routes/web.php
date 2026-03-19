@@ -64,6 +64,9 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
             return response()->json($res->json());
         });
 
+        Route::post('/api/ai/chat', [\App\Http\Controllers\Api\AiChatController::class, 'chat']);
+        Route::post('/api/bots/{id}/task', [\App\Http\Controllers\Api\AiChatController::class, 'assignTask']);
+
         // Leads API
         Route::patch('/api/leads/{id}/status', function(\Illuminate\Http\Request $request, $id) {
             \App\Models\Lead::where('id', $id)->update(['status' => $request->status]);

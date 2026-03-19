@@ -16,10 +16,19 @@ class GeminiAgentService
         $this->apiKey = env('GEMINI_API_KEY', '');
     }
 
-    public function handleIncomingMessage(string $agentType, string $message, string $chatId)
+    public function handleIncomingMessage(string $agentType, string $message, string $chatId, $botId = null)
     {
         if (empty($this->apiKey)) {
             return "Xatolik: Gemini API kiliti o'rnatilmagan.";
+        }
+
+        $currentTask = "";
+        if ($botId) {
+            $bot = \App\Models\TelegramBot::find($botId);
+            if ($bot) {
+                $agentType = $bot->agent_type;
+                $currentTask = $bot->current_task;
+            }
         }
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
@@ -57,6 +66,10 @@ class GeminiAgentService
                 ['name' => 'reset_admin_password', 'description' => 'Mijoz o\'z CRM parolini unotsa, tiklab berish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER']], 'required' => ['client_id']]],
                 ['name' => 'escalate_to_human', 'description' => 'Muammo murakkab bo\'lsa, suhbatni haqiqiy adminga o\'tkazish.', 'parameters' => ['type' => 'OBJECT', 'properties' => ['client_id' => ['type' => 'INTEGER'], 'issue' => ['type' => 'STRING']], 'required' => ['client_id', 'issue']]]
             ];
+        }
+
+        if (!empty($currentTask)) {
+            $systemInstruction .= " Senga bitta MAXSUS VAZIFA (TASK) yuklatilgan: " . $currentTask . ". Barcha javoblaringda faqat shu vazifani inobatga ol va uning doirasida ishla.";
         }
 
         $payload = [
