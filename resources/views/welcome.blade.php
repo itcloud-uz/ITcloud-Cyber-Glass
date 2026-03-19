@@ -195,6 +195,9 @@
         <div class="nav-item" onclick="switchTab('templates')">
             <i class="fa-solid fa-layer-group"></i> Shablonlar
         </div>
+        <div class="nav-item" onclick="switchTab('bot-manager')">
+            <i class="fa-brands fa-telegram"></i> Botlar Manager
+        </div>
         <div class="nav-item" onclick="switchTab('live-chat')">
             <i class="fa-solid fa-headset"></i> Qutqaruv Chati
         </div>
@@ -462,6 +465,7 @@
                 @if(isset($templates))
                     @foreach($templates as $template)
                     <div class="glass-panel stat-card" style="padding: 30px;">
+                        <button onclick="deleteTemplate({{ $template->id }})" style="position:absolute; top:10px; right:10px; background:transparent; border:none; color:var(--neon-pink); cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
                         <h3 style="color: var(--neon-cyan); margin-bottom: 10px;">{{ $template->name }}</h3>
                         <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5;">{{ $template->description }}</p>
                         <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">{{ number_format($template->price, 0) }} UZS</div>
@@ -473,10 +477,40 @@
                     @endforeach
                 @endif
                 <!-- Add new template card -->
-                <div class="glass-panel stat-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px dashed var(--glass-border); background: transparent;">
+                <div class="glass-panel stat-card" onclick="promptAddTemplate()" style="display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px dashed var(--glass-border); background: transparent;">
                     <i class="fa-solid fa-plus" style="font-size: 40px; color: var(--text-muted); margin-bottom: 15px;"></i>
                     <h3 style="color: var(--text-muted);">Yangi shablon qo'shish</h3>
                 </div>
+            </div>
+        </div>
+
+        <div id="bot-manager" class="view-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2>Telegram Botlar Nazorati</h2>
+                <button class="btn-ios btn-neon" onclick="promptAddBot()"><i class="fa-solid fa-plus"></i> Yangi Bot Qo'shish</button>
+            </div>
+            
+            <div class="glass-panel" style="padding: 30px; margin-bottom: 30px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;" id="bots-list">
+                    @if(isset($telegramBots))
+                        @foreach($telegramBots as $bot)
+                        <div class="glass-panel" style="padding: 20px; border: 1px solid {{ $bot->is_active ? 'var(--neon-cyan)' : 'var(--neon-pink)' }};">
+                            <h4 style="color: var(--neon-cyan); margin-bottom: 5px;">{{ $bot->name }}</h4>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px; font-family: monospace; overflow: hidden; text-overflow: ellipsis;">{{ substr($bot->token, 0, 15) }}...</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <span style="font-size: 12px; color: var(--text-muted);">Vazifasi: <b>{{ strtoupper($bot->agent_type) }}</b></span>
+                                <div class="ios-toggle {{ $bot->is_active ? 'on' : '' }}" onclick="toggleBot({{ $bot->id }}, {{ $bot->is_active ? 0 : 1 }})"></div>
+                            </div>
+                            <button class="btn-ios" style="width: 100%;" onclick="deleteBot({{ $bot->id }})"><i class="fa-solid fa-trash"></i> To'xtatish</button>
+                        </div>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+            
+            <div class="glass-panel" style="padding: 30px;">
+                <h3 style="margin-bottom: 15px; color: var(--neon-purple);"><i class="fa-solid fa-brain"></i> AI Agentlarni Unifikatsiya Qilish</h3>
+                <p style="color: var(--text-muted); font-size: 14px;">Barcha botlarga Gemini AI API biriktirilgan. Yangi bot qo'shganingizda, u avtomatik ravishda tanlangan roli bo'yicha (Sales, Finance, Support) muloqotga kirishadi.</p>
             </div>
         </div>
 
@@ -585,6 +619,79 @@
                     alert("Pochtada yoki bazada muammo. " + (data.message || ''));
                 }
             } catch(e) { alert("Xatolik. Rasm hajmi juda katta bo'lishi mumkin."); }
+        }
+
+        // Templates Management
+        async function promptAddTemplate() {
+            let name = prompt("Shablon nomi:");
+            if(!name) return;
+            let desc = prompt("Tavsif:");
+            let price = prompt("Narxi (raqamda):");
+            if(!price) return;
+            let preview = prompt("Preview URL:");
+
+            try {
+                let res = await fetch(`${API_PREFIX}/templates`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ name, description: desc, price, preview_url: preview })
+                });
+                let data = await res.json();
+                if(data.status === 'success') location.reload();
+            } catch(e) { alert("Xato"); }
+        }
+
+        async function deleteTemplate(id) {
+            if(!confirm("Haqiqatan ham o'chirmoqchimisiz?")) return;
+            try {
+                await fetch(`${API_PREFIX}/templates/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                location.reload();
+            } catch(e) { }
+        }
+
+        // Bot Management
+        async function promptAddBot() {
+            let name = prompt("Bot nomi (masalan: Sotuvchi Bot):");
+            if(!name) return;
+            let token = prompt("Telegram API Token:");
+            if(!token) return;
+            let type = prompt("Agent turi (sales, finance, support, custom):", "sales");
+
+            try {
+                let res = await fetch(`${API_PREFIX}/bots`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ name, token, agent_type: type, is_active: 1 })
+                });
+                let data = await res.json();
+                if(data.status === 'success') location.reload();
+                else alert("Xato: " + JSON.stringify(data.message));
+            } catch(e) { alert("Xatolik yuz berdi"); }
+        }
+
+        async function toggleBot(id, status) {
+            try {
+                await fetch(`${API_PREFIX}/bots/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ is_active: status })
+                });
+                location.reload();
+            } catch(e) { }
+        }
+
+        async function deleteBot(id) {
+            if(!confirm("Botni o'chirib tashlamoqchimisiz?")) return;
+            try {
+                await fetch(`${API_PREFIX}/bots/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                location.reload();
+            } catch(e) { }
         }
 
         // Yon Menyuni (Tablarni) almashtirish mantig'i

@@ -24,6 +24,7 @@ class AdminController extends Controller
         
         $templates = \App\Models\Template::all();
         $securityLogs = \App\Models\SecurityLog::latest()->take(20)->get();
+        $telegramBots = \App\Models\TelegramBot::all();
 
         return view('welcome', compact(
             'activeTenantsCount',
@@ -33,7 +34,8 @@ class AdminController extends Controller
             'tenants',
             'aiLogs',
             'templates',
-            'securityLogs'
+            'securityLogs',
+            'telegramBots'
         ));
     }
 }

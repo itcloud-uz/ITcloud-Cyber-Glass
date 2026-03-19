@@ -108,5 +108,12 @@ class DatabaseSeeder extends Seeder
             'details' => 'Liveness Detection xatoligi: qimirlamayotgan rasm ishlatildi.',
             'created_at' => Carbon::now()->subHours(12),
         ]);
+
+        \App\Models\TelegramBot::create([
+            'name' => 'ITcloud Central AI Bot',
+            'token' => '7957350025:AAE_RUNV4L-cnFv_bnL7gyYiAKnZKKWBy54',
+            'agent_type' => 'sales',
+            'is_active' => true,
+        ]);
     }
 }

@@ -27,6 +27,15 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         Route::patch('/api/tenants/{id}/status', [\App\Http\Controllers\Api\TenantController::class, 'changeStatus']);
         Route::post('/api/tenants/{id}/subscription', [\App\Http\Controllers\Api\TenantController::class, 'addSubscription']);
 
+        // Templates API
+        Route::post('/api/templates', [\App\Http\Controllers\Api\TemplateController::class, 'store']);
+        Route::delete('/api/templates/{id}', [\App\Http\Controllers\Api\TemplateController::class, 'destroy']);
+
+        // bots API
+        Route::post('/api/bots', [\App\Http\Controllers\Api\TelegramBotController::class, 'store']);
+        Route::put('/api/bots/{id}', [\App\Http\Controllers\Api\TelegramBotController::class, 'update']);
+        Route::delete('/api/bots/{id}', [\App\Http\Controllers\Api\TelegramBotController::class, 'destroy']);
+
         // Employees API
         Route::post('/api/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'store']);
     });
