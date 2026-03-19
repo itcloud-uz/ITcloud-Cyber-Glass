@@ -338,34 +338,34 @@
     <nav class="sidebar glass-panel">
         <div class="brand">IT<span>cloud</span></div>
         
-        <div class="nav-item active" onclick="switchTab(event, 'dashboard')">
+        <div class="nav-item active" onclick="switchTab('dashboard')">
             <i class="fa-solid fa-border-all"></i> Dashboard
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'finance')">
+        <div class="nav-item" onclick="switchTab('finance')">
             <i class="fa-solid fa-file-invoice-dollar"></i> Moliya & Sotuv
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'tenants')">
+        <div class="nav-item" onclick="switchTab('tenants')">
             <i class="fa-solid fa-users"></i> CRM Mijozlar
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'employees')">
+        <div class="nav-item" onclick="switchTab('employees')">
             <i class="fa-solid fa-user-shield"></i> Xodimlar / Admin
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'ai-hub')">
+        <div class="nav-item" onclick="switchTab('ai-hub')">
             <i class="fa-solid fa-brain"></i> AI Agent Hub
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'system-health')">
+        <div class="nav-item" onclick="switchTab('system-health')">
             <i class="fa-solid fa-server"></i> Server Holati
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'security-logs')">
+        <div class="nav-item" onclick="switchTab('security-logs')">
             <i class="fa-solid fa-shield-halved"></i> Xavfsizlik Jurnali
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'templates')">
+        <div class="nav-item" onclick="switchTab('templates')">
             <i class="fa-solid fa-layer-group"></i> Shablonlar
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'bot-manager')">
+        <div class="nav-item" onclick="switchTab('bot-manager')">
             <i class="fa-brands fa-telegram"></i> Botlar Manager
         </div>
-        <div class="nav-item" onclick="switchTab(event, 'live-chat')">
+        <div class="nav-item" onclick="switchTab('live-chat')">
             <i class="fa-solid fa-headset"></i> Qutqaruv Chati
         </div>
         
@@ -1414,7 +1414,7 @@
         }
 
         // Yon Menyuni (Tablarni) almashtirish mantig'i
-        function switchTab(event, tabId) {
+        function switchTab(tabId) {
             // Hamma sectionlarni yashirish
             document.querySelectorAll('.view-section').forEach(el => {
                 el.classList.remove('active');
@@ -1426,13 +1426,13 @@
             
             // Tanlanganini ko'rsatish
             const targetSection = document.getElementById(tabId);
-            if(targetSection) {
-                targetSection.classList.add('active');
-            }
-            
-            if(event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
-            }
+            const navItem = document.querySelector(`.nav-item[onclick*="'${tabId}'"]`);
+
+            if(targetSection) targetSection.classList.add('active');
+            if(navItem) navItem.classList.add('active');
+
+            // Save to storage
+            localStorage.setItem('activeTab', tabId);
         }
 
         // Dynamic Island (Sun'iy Intelekt xabarnomasi) animatsiyasi
@@ -1486,6 +1486,10 @@
 
         window.onload = function() {
             inactivityTime();
+            let savedTab = localStorage.getItem('activeTab');
+            if(savedTab) {
+                switchTab(savedTab);
+            }
         }
 
         // Tasodifiy ravishda AI xabar berib turishi (Realistik effekt uchun)
