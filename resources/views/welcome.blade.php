@@ -256,31 +256,27 @@
             font-weight: bold;
             text-transform: uppercase;
         }
-        /* Gallery Sidebar */
-        .gallery-sidebar {
-            position: fixed;
-            top: 0;
-            right: -400px;
-            width: 380px;
-            height: 100%;
-            background: rgba(15, 15, 20, 0.95);
-            backdrop-filter: blur(20px);
-            border-left: 1px solid var(--glass-border);
-            z-index: 3000;
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Gallery Modal Redesign */
+        .gallery-modal-content {
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            background: rgba(15, 15, 20, 0.9);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             padding: 30px;
-            box-shadow: -20px 0 50px rgba(0,0,0,0.5);
-        }
-        .gallery-sidebar.active {
-            right: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             gap: 15px;
             margin-top: 20px;
             overflow-y: auto;
-            max-height: calc(100vh - 150px);
+            padding-right: 10px;
         }
         .gallery-item {
             position: relative;
@@ -290,39 +286,29 @@
             overflow: hidden;
             border: 1px solid var(--glass-border);
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .gallery-item:hover {
-            transform: scale(1.05);
+            transform: translateY(-5px);
             border-color: var(--neon-cyan);
+            box-shadow: 0 10px 20px rgba(0, 255, 242, 0.2);
         }
         .gallery-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .gallery-item .file-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            font-size: 30px;
-            color: var(--text-muted);
-        }
         .gallery-item .overlay-down {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0,0,0,0.7);
-            padding: 5px;
-            text-align: center;
-            font-size: 10px;
-            color: var(--neon-cyan);
-            opacity: 0;
-            transition: opacity 0.2s;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: 0.3s;
+            font-size: 20px; color: white;
         }
         .gallery-item:hover .overlay-down { opacity: 1; }
+        
+        #gallerySidebar { display: none; } /* Remove old sidebar */
     </style>
 </head>
 <body>
@@ -1013,14 +999,22 @@
         </div>
     </div>
 
-    <!-- Gallery Sidebar Viewer -->
-    <div id="gallerySidebar" class="gallery-sidebar">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 id="galleryTitle">Mijoz Fayllari</h3>
-            <button onclick="closeFileGallery()" style="background:none; border:none; color:white; cursor:pointer; font-size: 20px;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="galleryContent" class="gallery-grid">
-            <!-- Files loaded via JS -->
+    <!-- Gallery Modal Viewer (Redesigned) -->
+    <div id="galleryModal" class="modal-overlay" onclick="if(event.target === this) closeFileGallery()">
+        <div class="gallery-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="galleryTitle"><i class="fa-solid fa-images"></i> Mijoz Galereyasi</h3>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="document.getElementById('gallery_file_input').click()" class="btn-ios" style="padding: 8px 15px; background: var(--neon-purple); border-color: var(--neon-purple);"><i class="fa-solid fa-plus"></i></button>
+                    <button onclick="closeFileGallery()" style="background:none; border:none; color:white; cursor:pointer; font-size: 20px;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <input type="file" id="gallery_file_input" style="display:none;" onchange="handleGalleryUpload(this)">
+                <input type="hidden" id="gallery_tenant_id">
+            </div>
+            <p id="galleryInfo" style="font-size: 11px; opacity: 0.5; margin-bottom: 15px;">Fayllar ustiga bossangiz yuklab olinadi.</p>
+            <div id="galleryContent" class="gallery-grid">
+                <!-- Loaded via JS -->
+            </div>
         </div>
     </div>
 
@@ -1337,16 +1331,17 @@
 
         // File Gallery & Smart Download
         function openFileGallery(tenantId, companyName, files) {
-            const sidebar = document.getElementById('gallerySidebar');
+            const modal = document.getElementById('galleryModal');
             const content = document.getElementById('galleryContent');
-            document.getElementById('galleryTitle').innerText = companyName + " - Galereya";
+            document.getElementById('galleryTitle').innerText = companyName;
+            document.getElementById('gallery_tenant_id').value = tenantId;
             
             content.innerHTML = '';
             
             if(!files || files.length === 0) {
-                content.innerHTML = '<div style="grid-column: span 2; text-align: center; color: var(--text-muted); margin-top: 50px;">Hech qanday fayl yo\'q</div>';
+                content.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 0;">Hali fayllar yuklanmagan</div>';
             } else {
-                files.forEach((file, index) => {
+                files.forEach((file) => {
                     const isImg = file.match(/\.(jpg|jpeg|png|gif|webp)$/i);
                     const item = document.createElement('div');
                     item.className = 'gallery-item';
@@ -1357,23 +1352,50 @@
                     item.onclick = () => smartDownload(`/storage/${file}`, taggedName);
                     
                     if(isImg) {
-                        item.innerHTML = `<img src="/storage/${file}"><div class="overlay-down"><i class="fa-solid fa-download"></i> Yuklash</div>`;
+                        item.innerHTML = `<img src="/storage/${file}"><div class="overlay-down"><i class="fa-solid fa-download"></i></div>`;
                     } else {
-                        item.innerHTML = `<div class="file-icon"><i class="fa-solid fa-file-lines"></i></div><div class="overlay-down"><i class="fa-solid fa-download"></i> Yuklash</div>`;
+                        item.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding: 10px; text-align:center;">
+                            <i class="fa-solid fa-file-invoice" style="font-size: 30px; opacity:0.3; margin-bottom:5px;"></i>
+                            <div style="font-size:9px; overflow:hidden; width:100%;">${fileName}</div>
+                        </div><div class="overlay-down"><i class="fa-solid fa-download"></i></div>`;
                     }
                     content.appendChild(item);
                 });
             }
             
-            sidebar.classList.add('active');
+            modal.classList.add('active');
         }
 
         function closeFileGallery() {
-            document.getElementById('gallerySidebar').classList.remove('active');
+            document.getElementById('galleryModal').classList.remove('active');
+        }
+
+        async function handleGalleryUpload(input) {
+            if(!input.files.length) return;
+            const tenantId = document.getElementById('gallery_tenant_id').value;
+            const file = input.files[0];
+            
+            let fd = new FormData();
+            fd.append('file', file);
+            fd.append('type', 'files');
+
+            simulateAIAction("Yangi fayl galerayaga yuklanmoqda...");
+            
+            try {
+                let res = await fetch(`${API_PREFIX}/tenants/${tenantId}/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: fd
+                });
+                if(res.ok) {
+                    simulateAIAction("Yuklandi! Galereya yangilanmoqda...");
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch(e) { }
         }
 
         async function smartDownload(url, filename) {
-            simulateAIAction("Faylga maxsus ID biriktirilmoqda...");
+            simulateAIAction("Yuklab olinmoqda...");
             try {
                 const response = await fetch(url);
                 const blob = await response.blob();
@@ -1383,10 +1405,8 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                simulateAIAction("Muvaffaqiyatli yuklandi: " + filename);
-            } catch(e) {
-                simulateAIAction("Xatolik: Faylni yuklab bo'lmadi");
-            }
+                simulateAIAction("Saqlandi: " + filename);
+            } catch(e) { }
         }
 
         async function setBotWebhook(id) {
