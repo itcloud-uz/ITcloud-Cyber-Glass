@@ -23,6 +23,7 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
     // Dashboard requires standard Auth AND Face ID
     Route::middleware(['auth', CheckFaceId::class])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('home');
+        Route::get('/api/dashboard/analytics', [\App\Http\Controllers\Api\AnalyticsController::class, 'dashboardData']);
 
         // Tenants API (CRUD)
         Route::post('/api/tenants', [\App\Http\Controllers\Api\TenantController::class, 'store']);
@@ -30,6 +31,7 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         Route::delete('/api/tenants/{id}', [\App\Http\Controllers\Api\TenantController::class, 'destroy']);
         Route::patch('/api/tenants/{id}/status', [\App\Http\Controllers\Api\TenantController::class, 'changeStatus']);
         Route::post('/api/tenants/{id}/subscription', [\App\Http\Controllers\Api\TenantController::class, 'addSubscription']);
+        Route::get('/api/subscriptions/{id}/invoice', [\App\Http\Controllers\Api\InvoiceController::class, 'download']);
         Route::post('/api/tenants/{id}/upload', function(\Illuminate\Http\Request $request, $id) {
             $tenant = \App\Models\Tenant::findOrFail($id);
             $type = $request->input('type'); // contract or files
@@ -67,6 +69,37 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
 
         Route::post('/api/ai/chat', [\App\Http\Controllers\Api\AiChatController::class, 'chat']);
         Route::post('/api/bots/{id}/task', [\App\Http\Controllers\Api\AiChatController::class, 'assignTask']);
+        Route::get('/api/bots/{id}/knowledge', function($id) {
+            return \App\Models\KnowledgeBase::where('bot_id', $id)->get();
+        });
+        Route::post('/api/bots/{id}/knowledge', function(\Illuminate\Http\Request $request, $id) {
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $path = $file->store('knowledge', 'public');
+                \App\Models\KnowledgeBase::create([
+                    'bot_id' => $id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientOriginalExtension(),
+                    'file_path' => $path,
+                    'content' => 'Tahlil qilindi: ' . $file->getClientOriginalName() // Mock content extraction
+                ]);
+            }
+            return response()->json(['status' => 'success']);
+        });
+        Route::get('/api/ai/active-chats', function() {
+            return \App\Models\AiLog::select('chat_id', 'agent_type', DB::raw('max(created_at) as last_time'))
+                ->where('action', 'Chat Message')
+                ->groupBy('chat_id', 'agent_type')
+                ->orderBy('last_time', 'desc')
+                ->take(10)
+                ->get();
+        });
+        Route::get('/api/ai/conversation/{chat_id}', function($chat_id) {
+            return \App\Models\AiLog::where('chat_id', $chat_id)
+                ->where('action', 'Chat Message')
+                ->orderBy('created_at', 'asc')
+                ->get();
+        });
 
         // Leads API
         Route::patch('/api/leads/{id}/status', function(\Illuminate\Http\Request $request, $id) {

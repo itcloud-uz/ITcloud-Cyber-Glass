@@ -35,7 +35,15 @@ class GeminiAgentService
         
         $tools = [
             ['name' => 'get_system_overview', 'description' => 'Tizimdagi umumiy holatni ko\'rish (Loyihalar, Leadlar, Botlar soni).'],
-            ['name' => 'get_recent_events', 'description' => 'Oxirgi 5 ta AI agent harakatlari va tizim o\'zgarishlarini ko\'rish.']
+            ['name' => 'get_recent_events', 'description' => 'Oxirgi 5 ta AI agent harakatlari va tizim o\'zgarishlarini ko\'rish.'],
+            ['name' => 'notify_other_agent', 'description' => 'Boshqa agentga (masalan moliya yoki texnik) xabar yoki topshiriq yuborish.', 'parameters' => [
+                'type' => 'OBJECT',
+                'properties' => [
+                    'target_agent' => ['type' => 'STRING', 'enum' => ['sales', 'finance', 'support']],
+                    'message' => ['type' => 'STRING']
+                ],
+                'required' => ['target_agent', 'message']
+            ]]
         ];
 
         if ($agentType === 'sales') {
@@ -151,11 +159,34 @@ class GeminiAgentService
                         })->implode("\n");
                         return "Oxirgi faoliyatlar:\n" . ($logs ?: "Hozircha faoliyatlar yo'q.");
                     }
+
+                    if ($funcName === 'notify_other_agent') {
+                        $target = $args['target_agent'] ?? 'all';
+                        $msg = $args['message'] ?? '';
+                        AiLog::create([
+                            'agent_type' => $agentType,
+                            'action' => 'Swarm Signaling',
+                            'details' => "Target: {$target}. Xabar: {$msg}"
+                        ]);
+                        return "Xabar {$target} agentiga yuborildi. Ular tez orada javob berishadi.";
+                    }
                 }
             }
 
             // Matnli javobni qaytarish
-            return $parts[0]['text'] ?? "Kechirasiz, hozirda savolingizga javob bera olmayman.";
+            $finalResponse = $parts[0]['text'] ?? "Kechirasiz, hozirda savolingizga javob bera olmayman.";
+            
+            // Log for human monitoring
+            AiLog::create([
+                'agent_type' => $agentType,
+                'chat_id' => $chatId,
+                'action' => 'Chat Message',
+                'user_message' => $message,
+                'bot_response' => $finalResponse,
+                'details' => "AI javob berdi"
+            ]);
+
+            return $finalResponse;
             
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Gemini Error: " . $e->getMessage());

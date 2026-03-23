@@ -7,6 +7,7 @@
     <title>ITcloud | Obsidian OS v1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             /* Cyberpunk ranglar */
@@ -349,7 +350,7 @@
             <i class="fa-solid fa-layer-group"></i> Shablonlar
         </div>
         <div class="nav-item" onclick="switchTab('bot-manager')">
-            <i class="fa-brands fa-telegram"></i> Botlar Manager
+            <i class="fa-solid fa-tower-cell"></i> Kanallar & Botlar
         </div>
         <div class="nav-item" onclick="switchTab('live-chat')">
             <i class="fa-solid fa-headset"></i> Qutqaruv Chati
@@ -368,32 +369,28 @@
         <div id="dashboard" class="view-section active">
             <div class="stats-grid">
                 <div class="glass-panel stat-card">
-                    <div class="stat-title">Faol Loyihalar</div>
-                    <div class="stat-value" id="stats-active-tenants">{{ $activeTenantsCount ?? 0 }}</div>
+                    <div class="stat-title">Jami Daromad</div>
+                    <div class="stat-value" id="stats-total-revenue">0</div>
                 </div>
                 <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-purple);">
-                    <div class="stat-title">AI Sotuvlar (Bu oy)</div>
-                    <div class="stat-value" id="stats-ai-sales">{{ $aiSalesCount ?? 0 }}</div>
+                    <div class="stat-title">Faol Mijozlar</div>
+                    <div class="stat-value" id="stats-active-tenants">{{ $activeTenantsCount ?? 0 }}</div>
                 </div>
                 <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-pink);">
-                    <div class="stat-title">Bloklanganlar</div>
-                    <div class="stat-value" id="stats-blocked">{{ $blockedTenantsCount ?? 0 }}</div>
+                    <div class="stat-title">Bugungi Leadlar</div>
+                    <div class="stat-value" id="stats-new-leads">0</div>
                 </div>
                 <div class="glass-panel stat-card">
-                    <div class="stat-title">AI tejagan vaqt</div>
-                    <div class="stat-value">{{ $aiSavedTime ?? 0 }} <span style="font-size: 14px; font-weight: 400; color: #8b9bb4;">soat</span></div>
+                    <div class="stat-title">Jami Agentlar</div>
+                    <div class="stat-value" id="stats-total-bots">{{ count($telegramBots ?? []) }}</div>
                 </div>
             </div>
 
             <div class="content-row">
-                <div class="glass-panel" style="padding: 30px;">
-                    <div class="panel-title"><i class="fa-solid fa-chart-line" style="color: var(--neon-cyan);"></i> Daromad & Tizim o'sishi</div>
-                    <div style="width: 100%; height: 300px; display: flex; align-items: flex-end; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                        <div style="flex:1; background: linear-gradient(to top, rgba(0,255,204,0.1), rgba(0,255,204,0.8)); height: 40%; border-radius: 8px 8px 0 0;"></div>
-                        <div style="flex:1; background: linear-gradient(to top, rgba(0,255,204,0.1), rgba(0,255,204,0.8)); height: 60%; border-radius: 8px 8px 0 0;"></div>
-                        <div style="flex:1; background: linear-gradient(to top, rgba(176,38,255,0.1), rgba(176,38,255,0.8)); height: 30%; border-radius: 8px 8px 0 0;"></div>
-                        <div style="flex:1; background: linear-gradient(to top, rgba(0,255,204,0.1), rgba(0,255,204,0.8)); height: 80%; border-radius: 8px 8px 0 0;"></div>
-                        <div style="flex:1; background: linear-gradient(to top, rgba(0,255,204,0.1), rgba(0,255,204,0.8)); height: 95%; border-radius: 8px 8px 0 0; box-shadow: 0 0 20px rgba(0,255,204,0.5);"></div>
+                <div class="glass-panel" style="padding: 25px; flex: 1.5;">
+                    <div class="panel-title"><i class="fa-solid fa-chart-line" style="color: var(--neon-cyan);"></i> Kompaniya O'sish Dinamikasi</div>
+                    <div style="height: 300px; width: 100%;">
+                        <canvas id="dashboardChart"></canvas>
                     </div>
                 </div>
 
@@ -627,16 +624,24 @@
                         <span style="opacity: 0.5;">Missiya:</span> {{ $bot->current_task ?? 'Standart boshqaruv rejimi.' }}
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                         <button onclick="openTaskModal({{ $bot->id }}, '{{ $bot->name }}', '{{ $bot->current_task }}')" class="btn-ios" style="background: rgba(176,38,255,0.1); border-color: rgba(176,38,255,0.3); color: var(--neon-purple);"><i class="fa-solid fa-list-check"></i> Missiya</button>
                         <button onclick="openAiChat({{ $bot->id }}, '{{ $bot->name }}')" class="btn-ios btn-neon"><i class="fa-solid fa-comments"></i> Chat</button>
                     </div>
+                    <button onclick="openKnowledgeModal({{ $bot->id }}, '{{ $bot->name }}')" class="btn-ios" style="width: 100%; background: rgba(0,255,204,0.05); border-color: rgba(0,255,204,0.2); color: var(--neon-cyan);"><i class="fa-solid fa-book"></i> Bilimlar Bazasi (RAG)</button>
                 </div>
                 @endforeach
 
                 <div class="glass-panel" onclick="switchTab('bot-manager')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px dashed rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); min-height: 200px;">
                     <i class="fa-solid fa-plus-circle" style="font-size: 30px; opacity: 0.3; margin-bottom: 10px;"></i>
                     <div style="color: var(--text-muted);">Yangi Agent Qo'shish</div>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="margin-top: 30px; padding: 25px;">
+                <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-eye" style="color: var(--neon-cyan);"></i> Jonli Monitoring (Human-in-the-loop)</h3>
+                <div id="active-chats-list" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="text-align: center; padding: 20px; opacity: 0.5;">Aktiv suhbatlar yuklanmoqda...</div>
                 </div>
             </div>
         </div>
@@ -650,13 +655,19 @@
             </div>
             
             <div class="glass-panel" style="padding: 30px; margin-top: 20px;">
-                <h3 style="margin-bottom: 20px;">Tranzaksiyalar (Mock)</h3>
-                <div class="tenant-row">
-                    <div><b>Invoys #1045</b></div>
-                    <div style="color: var(--neon-cyan);">150,000 UZS</div>
-                    <div>Payme</div>
-                    <div>Yangi</div>
+                <h3 style="margin-bottom: 20px;">Oxirgi To'lovlar va Invoyslar</h3>
+                @foreach($subscriptions ?? [] as $sub)
+                <div class="tenant-row" style="margin-bottom:10px;">
+                    <div>
+                        <b>Invoys #{{ $sub->id }}</b><br>
+                        <small style="opacity: 0.5;">{{ $sub->tenant->company_name ?? 'Noma\'lum' }}</small>
+                    </div>
+                    <div>{{ number_format($sub->amount_paid, 0) }} UZS</div>
+                    <div><span class="badge" style="background: rgba(0,255,100,0.1); color: #0f0;">Muvaffaqiyatli</span></div>
+                    <div style="font-size: 13px; opacity: 0.7;">{{ $sub->paid_at ? $sub->paid_at->format('d.m.Y') : $sub->created_at->format('d.m.Y') }}</div>
+                    <a href="/api/subscriptions/{{ $sub->id }}/invoice" class="btn-ios" style="text-decoration: none; color: var(--neon-cyan); border: 1px solid var(--neon-cyan);"><i class="fa-solid fa-file-pdf"></i> PDF</a>
                 </div>
+                @endforeach
             </div>
         </div>
 
@@ -799,9 +810,18 @@
                 </div>
             </div>
             
-            <div class="glass-panel" style="padding: 30px;">
-                <h3 style="margin-bottom: 15px; color: var(--neon-purple);"><i class="fa-solid fa-brain"></i> AI Agentlarni Unifikatsiya Qilish</h3>
-                <p style="color: var(--text-muted); font-size: 14px;">Barcha botlarga Gemini AI API biriktirilgan. Yangi bot qo'shganingizda, u avtomatik ravishda tanlangan roli bo'yicha (Sales, Finance, Support) muloqotga kirishadi.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="glass-panel" style="padding: 30px;">
+                    <h3 style="margin-bottom: 15px; color: var(--neon-purple);"><i class="fa-solid fa-brain"></i> AI Agentlarni Unifikatsiya Qilish</h3>
+                    <p style="color: var(--text-muted); font-size: 14px;">Barcha botlarga Gemini AI API biriktirilgan. Yangi bot qo'shganingizda, u avtomatik ravishda tanlangan roli bo'yicha (Sales, Finance, Support) muloqotga kirishadi.</p>
+                </div>
+                <div class="glass-panel" style="padding: 30px; border-left: 4px solid #25D366;">
+                    <h3 style="margin-bottom: 15px; color: #25D366;"><i class="fa-brands fa-whatsapp"></i> Multi-Channel Connect</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="alert('WhatsApp Business API ulanmoqda...')" class="btn-ios" style="color: #25D366; border-color: #25D366; flex: 1;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+                        <button onclick="alert('Instagram Direct ulanmoqda...')" class="btn-ios" style="color: #E1306C; border-color: #E1306C; flex: 1;"><i class="fa-brands fa-instagram"></i> Instagram</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -902,6 +922,30 @@
             <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
                 <button class="btn-ios" onclick="window.open(document.getElementById('manageIframe').src, '_blank')"><i class="fa-solid fa-external-link"></i> Alohida oynada ochish</button>
                 <button class="btn-ios btn-neon" onclick="closeManageModal()">Yopish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Knowledge Base RAG Modal -->
+    <div id="knowledgeModal" class="modal-overlay" onclick="if(event.target === this) closeKnowledgeModal()">
+        <div class="glass-modal" style="max-width: 500px;">
+            <div class="modal-title">Bilimlar Bazasi: <span id="knowledgeBotName">...</span></div>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">PDF yoki Word hujjatlarini yuklang. Agent ushbu hujjatlar asosida mijozlarga javob beradi.</p>
+            
+            <form onsubmit="event.preventDefault(); uploadKnowledge();" id="knowledgeForm">
+                <input type="hidden" id="kb_bot_id">
+                <div style="margin-bottom: 20px;">
+                    <label style="display:block; margin-bottom:10px;">Hujjat (PDF/DOCX/TXT)</label>
+                    <input type="file" id="kb_file" required style="width:100%; padding:15px; background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); border-radius: 12px; color: white;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="closeKnowledgeModal()" class="btn-ios" style="flex:1;">Bekor qilish</button>
+                    <button type="submit" class="btn-ios btn-neon" style="flex:2;">Yuklash va O'rgatish</button>
+                </div>
+            </form>
+
+            <div id="kb-list" style="margin-top: 20px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+                <!-- List of uploaded files will appear here -->
             </div>
         </div>
     </div>
@@ -1051,6 +1095,23 @@
                 <input type="hidden" id="chat_bot_id">
                 <input type="text" id="chatInput" class="form-control" placeholder="Xabaringizni yozing..." style="flex: 1;" onkeypress="if(event.key==='Enter') sendAiMessage()">
                 <button onclick="sendAiMessage()" class="btn-ios btn-neon" style="width: 50px;"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Monitor Modal (Intervention) -->
+    <div id="aiMonitorModal" class="modal-overlay" onclick="if(event.target === this) closeAiMonitor()">
+        <div class="glass-modal" style="max-width: 600px; height: 700px; display: flex; flex-direction: column;">
+            <div class="modal-title" style="display:flex; justify-content: space-between;">
+                <span><i class="fa-solid fa-tower-broadcast"></i> Jonli Kuzatuv: <span id="monitorChatId">...</span></span>
+                <button onclick="closeAiMonitor()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="monitorMessages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.3); border-radius: 12px; margin: 15px 0;">
+                <!-- Conversation history -->
+            </div>
+            <div style="display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid var(--glass-border);">
+                <button onclick="takeControl()" class="btn-ios" style="background: var(--neon-pink); border-color: var(--neon-pink); color: white; flex: 1;"><i class="fa-solid fa-hand-stop"></i> AI ni To'xtatish</button>
+                <button onclick="sendOperatorMsg()" class="btn-ios btn-neon" style="flex: 2;"><i class="fa-solid fa-paper-plane"></i> Operator xabari</button>
             </div>
         </div>
     </div>
@@ -1389,6 +1450,55 @@
             openBotModal(id, name, token, type);
         }
 
+        // Knowledge Base (RAG) UI Logic
+        async function openKnowledgeModal(botId, botName) {
+            document.getElementById('kb_bot_id').value = botId;
+            document.getElementById('knowledgeBotName').innerText = botName;
+            document.getElementById('knowledgeModal').classList.add('active');
+            
+            // Fetch existing documents
+            const res = await fetch(`${API_PREFIX}/bots/${botId}/knowledge`);
+            const data = await res.json();
+            const list = document.getElementById('kb-list');
+            if (data.length === 0) {
+                list.innerHTML = '<div style="opacity: 0.5; font-size: 12px; text-align: center;">Hozircha bilimlar yuklanmagan.</div>';
+            } else {
+                list.innerHTML = '<h4 style="font-size: 14px; margin-bottom: 10px;">Yuklangan Bilimlar:</h4>' + 
+                    data.map(f => `
+                        <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; font-size: 12px; display: flex; justify-content: space-between;">
+                            <span><i class="fa-solid fa-file-pdf"></i> ${f.file_name}</span>
+                            <span style="color: var(--neon-cyan);">O'qildi <i class="fa-solid fa-check-double"></i></span>
+                        </div>
+                    `).join('');
+            }
+        }
+
+        function closeKnowledgeModal() {
+            document.getElementById('knowledgeModal').classList.remove('active');
+        }
+
+        async function uploadKnowledge() {
+            const botId = document.getElementById('kb_bot_id').value;
+            const fileInput = document.getElementById('kb_file');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+            simulateAIAction("Hujjat tahlil qilinmoqda va AI miyasiga yuklanmoqda...");
+            
+            try {
+                const res = await fetch(`${API_PREFIX}/bots/${botId}/knowledge`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    simulateAIAction("Loyiha bilimlar bazasi yangilandi!");
+                    closeKnowledgeModal();
+                }
+            } catch(e) { alert("Yuklashda xatolik"); }
+        }
+
         async function toggleBot(id, status) {
             try {
                 await fetch(`${API_PREFIX}/bots/${id}`, {
@@ -1600,7 +1710,70 @@
             }
         }
 
-        // Dynamic Island (Sun'iy Intelekt xabarnomasi) animatsiyasi
+        // AI Live Monitoring Logic
+        async function updateActiveChats() {
+            try {
+                const res = await fetch(`${API_PREFIX}/ai/active-chats`, {
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                const chats = await res.json();
+                const container = document.getElementById('active-chats-list');
+                
+                if (chats.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.5;">Hozircha aktiv suhbatlar yo\'q.</div>';
+                    return;
+                }
+
+                container.innerHTML = chats.map(c => `
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="color: var(--neon-cyan); font-weight: bold;">ID: ${c.chat_id}</span>
+                            <span style="margin-left: 10px; font-size: 11px; opacity: 0.6;">Kanal: ${c.agent_type.toUpperCase()}</span>
+                        </div>
+                        <div>
+                            <span style="font-size: 12px; opacity: 0.4; margin-right: 15px;">${new Date(c.last_time).toLocaleTimeString()}</span>
+                            <button onclick="openAiMonitor('${c.chat_id}')" class="btn-ios" style="padding: 5px 15px; font-size: 12px;">Kuzatish & Aralashish</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) { }
+        }
+
+        async function openAiMonitor(chatId) {
+            document.getElementById('monitorChatId').innerText = chatId;
+            document.getElementById('aiMonitorModal').classList.add('active');
+            
+            try {
+                const res = await fetch(`${API_PREFIX}/ai/conversation/${chatId}`, {
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                const history = await res.json();
+                const box = document.getElementById('monitorMessages');
+                
+                box.innerHTML = history.map(h => `
+                    <div style="margin-bottom: 10px;">
+                        <div style="font-size: 10px; opacity: 0.5; margin-bottom: 4px;">User (${chatId}):</div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px 10px 0 10px; align-self: flex-end; font-size: 13px;">${h.user_message}</div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="font-size: 10px; color: var(--neon-cyan); margin-bottom: 4px;">AI (${h.agent_type}):</div>
+                        <div style="background: rgba(0,255,204,0.1); padding: 10px; border-radius: 10px 10px 10px 0; align-self: flex-start; font-size: 13px;">${h.bot_response}</div>
+                    </div>
+                `).join('');
+                box.scrollTop = box.scrollHeight;
+            } catch(e) { }
+        }
+
+        function closeAiMonitor() {
+            document.getElementById('aiMonitorModal').classList.remove('active');
+        }
+
+        // Send dummy actions for intervention (future implementation)
+        function takeControl() { simulateAIAction("AI ushbu chat uchun vaqtincha to'xtatildi. Endi faqat operator javob beradi."); }
+        function sendOperatorMsg() { alert("Operator xati yuborildi (Simulatsiya)"); }
+
+        // Refresh loop
+        setInterval(updateActiveChats, 10000); // 10 sekunda yangilab turadi
         function simulateAIAction(customText = null) {
             const island = document.getElementById('dynamicIsland');
             const text = document.getElementById('islandText');
@@ -1649,12 +1822,87 @@
             }
         };
 
+        // Dashboard Analytics Hydration
+        async function initDashboardAnalytics() {
+            try {
+                const res = await fetch(`${API_PREFIX}/dashboard/analytics`, {
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                const data = await res.json();
+
+                // Update Stats
+                document.getElementById('stats-total-revenue').innerText = new Intl.NumberFormat('uz-UZ').format(data.stats.total_revenue) + " UZS";
+                document.getElementById('stats-active-tenants').innerText = data.stats.active_tenants;
+                document.getElementById('stats-new-leads').innerText = data.stats.new_leads_today;
+                document.getElementById('stats-total-bots').innerText = data.stats.total_bots;
+
+                // Render Chart
+                const ctx = document.getElementById('dashboardChart').getContext('2d');
+                
+                // Helper to map monthly totals
+                const mapMonthly = (dbData) => {
+                    const months = ["01","02","03","04","05","06","07","08","09","10","11","12"];
+                    const currentMonths = [];
+                    for(let i=5; i>=0; i--) {
+                        let d = new Date();
+                        d.setMonth(d.getMonth() - i);
+                        currentMonths.push(months[d.getMonth()]);
+                    }
+                    return currentMonths.map(m => {
+                        let find = dbData.find(d => d.month == m);
+                        return find ? find.total : 0;
+                    });
+                }
+
+                const revenueValues = mapMonthly(data.revenue);
+                const leadsValues = mapMonthly(data.leads);
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.months,
+                        datasets: [
+                            {
+                                label: 'Daromad (UZS)',
+                                data: revenueValues,
+                                borderColor: '#00ffcc',
+                                backgroundColor: 'rgba(0, 255, 204, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Yangi Leadlar',
+                                data: leadsValues,
+                                borderColor: '#b026ff',
+                                backgroundColor: 'rgba(176, 38, 255, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, labels: { color: 'white' } }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+                            y: { position: 'left', grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#00ffcc' } },
+                            y1: { position: 'right', grid: { display: false }, ticks: { color: '#b026ff' } }
+                        }
+                    }
+                });
+            } catch (e) { console.error("Analytics Error:", e); }
+        }
+
         window.onload = function() {
             inactivityTime();
-            let savedTab = localStorage.getItem('activeTab');
-            if(savedTab) {
-                switchTab(savedTab);
-            }
+            const savedTab = localStorage.getItem('activeTab') || 'dashboard';
+            switchTab(savedTab);
+            initDashboardAnalytics();
         }
 
         // Tasodifiy ravishda AI xabar berib turishi (Realistik effekt uchun)
