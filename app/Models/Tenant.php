@@ -10,6 +10,7 @@ class Tenant extends Model
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'last_active_at' => 'datetime',
         'files' => 'array'
     ];
 

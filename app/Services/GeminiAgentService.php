@@ -202,6 +202,59 @@ class GeminiAgentService
         }
     }
 
+    public function handleVoiceMessage(string $base64Audio, string $chatId, $botId = null)
+    {
+        if (empty($this->apiKey)) return "Xatolik: API Key.";
+
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
+        
+        $payload = [
+            'contents' => [
+                ['parts' => [
+                    ['text' => "Sen AI Assistantisan. Senga ovozli xabar (audio) kelmoqda. Uni matnga o'gir va ichidagi ma'lumotlarni tushunib, agar mijoz (lead) haqida bo'lsa 'create_sales_lead' funksiyasini chaqir. Agar shunchaki savol bo'lsa javob ber."],
+                    ['inline_data' => ['mime_type' => 'audio/ogg', 'data' => $base64Audio]]
+                ]]
+            ],
+            'tools' => [['function_declarations' => [
+                ['name' => 'create_sales_lead', 'description' => 'Mijoz ma\'lumotlarini kiritish.', 'parameters' => [
+                    'type' => 'OBJECT', 
+                    'properties' => [
+                        'customer_name' => ['type' => 'STRING'], 
+                        'phone' => ['type' => 'STRING'], 
+                        'details' => ['type' => 'STRING']
+                    ], 
+                    'required' => ['customer_name', 'phone']
+                ]]
+            ]]]
+        ];
+
+        try {
+            $response = Http::post($url, $payload);
+            $data = $response->json();
+            $candidate = $data['candidates'][0] ?? null;
+            if (!$candidate) return "Ovozli xabarni tahlil qila olmadim.";
+
+            $parts = $candidate['content']['parts'] ?? [];
+            foreach ($parts as $part) {
+                if (isset($part['functionCall'])) {
+                    $funcName = $part['functionCall']['name'];
+                    $args = $part['functionCall']['args'] ?? [];
+                    if ($funcName === 'create_sales_lead') {
+                        \App\Models\Lead::create([
+                            'customer_name' => $args['customer_name'],
+                            'phone' => $args['phone'],
+                            'details' => "[Voice CMD] " . ($args['details'] ?? ''),
+                            'status' => 'yangi'
+                        ]);
+                        return "Ovozli xabar asosida yangi Lead yaratildi: " . $args['customer_name'];
+                    }
+                }
+            }
+
+            return $parts[0]['text'] ?? "Ovozli xabar eshitildi, lekin vazifa tushunilmadi.";
+        } catch (\Exception $e) { Log::error($e->getMessage()); }
+    }
+
     public function createNewTenant(string $domain, string $planName)
     {
         // 1. Bazaga yozish

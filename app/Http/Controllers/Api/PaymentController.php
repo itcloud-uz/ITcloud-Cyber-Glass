@@ -27,6 +27,23 @@ class PaymentController extends Controller
             $tenant->status = 'active'; // Blokdan yechish
             $tenant->save();
 
+            // 1.1 Referral Bonus logic
+            if ($tenant->referred_by_id) {
+                $referrer = Tenant::find($tenant->referred_by_id);
+                if ($referrer) {
+                    $refExpires = $referrer->expires_at && Carbon::now()->lessThan($referrer->expires_at) ? $referrer->expires_at : Carbon::now();
+                    $referrer->expires_at = $refExpires->addDays(30);
+                    $referrer->save();
+
+                    AiLog::create([
+                        'tenant_id' => $referrer->id,
+                        'agent_type' => 'finance',
+                        'action' => 'Referral Bonus +30 kun',
+                        'details' => "Siz taklif qilgan mijoz ({$tenant->company_name}) to'lov qildi. Tizimingizga 30 kun tekin qo'shib berildi!"
+                    ]);
+                }
+            }
+
             // 2. Tranzaksiya qilib Subscription yozish
             $tenant->subscriptions()->create([
                 'plan_name' => 'Payme Auto-Renewal',
