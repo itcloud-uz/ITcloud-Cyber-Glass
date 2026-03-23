@@ -39,15 +39,38 @@ class AuthController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Sizning Face ID rasmingiz bazaga kiritilmagan! Iltimos, OTP orqali kiring.'], 401);
         }
 
-        // In real world, the python service would verify and send a token or we would call Python API 
-        // Here we mock:
-        $token = $request->input('face_token');
-        if ($token === 'face_id_success') { 
-            $request->session()->put('face_id_verified', true);
-            return response()->json(['status' => 'success', 'redirect' => '/']);
-        }
+        // 1. Get image from request (base64)
+        $image = $request->input('image');
+        
+        // 2. Call Python FaceID Server securely
+        try {
+            $apiKey = env('FACEID_API_KEY', 'itcloud_secret_faceid_2026');
+            
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'X-API-KEY' => $apiKey,
+                'Accept' => 'application/json'
+            ])->post('http://127.0.0.1:8000/api/v1/verify-face', [
+                'image' => $image,
+                'user_id' => $user->id
+            ]);
 
-        return response()->json(['status' => 'error', 'message' => 'Yuz tanilmadi yoxud liveness o\'tmadi'], 401);
+            if ($response->successful()) {
+                $data = $response->json();
+                if (($data['status'] ?? '') === 'success') {
+                    $request->session()->put('face_id_verified', true);
+                    return response()->json(['status' => 'success', 'redirect' => '/']);
+                }
+            }
+            
+            return response()->json([
+                'status' => 'error', 
+                'message' => $response->json()['message'] ?? 'Yuz tanilmadi yoxud liveness o\'tmadi'
+            ], 401);
+
+        } catch (\Exception $e) {
+            Log::error("FaceID Server Error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'FaceID serveri bilan bog\'lanishda xatolik!'], 500);
+        }
     }
     
     public function sendTelegramOtp(Request $request)

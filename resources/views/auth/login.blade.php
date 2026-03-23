@@ -210,15 +210,18 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
                 
-                // MOCK: Python serverga kadrlar ketish simulyatsiyasi
-                document.getElementById('liveness-msg').innerHTML = "Liveness tekshirilmoqda (Eye Blink)...";
-                setTimeout(() => {
-                    document.getElementById('liveness-msg').innerHTML = "<span style='color:var(--neon-cyan)'>Yuz tekshirilmoqda (Face Match)...</span>";
-                    setTimeout(async () => {
-                        // Aslida bu Python server qaytargan tokenni yuborish bo'ladi
-                        sendFaceIDToken('face_id_success');
-                    }, 2000);
-                }, 3000);
+                // REAL: Python serverga kadr yuborish
+                document.getElementById('liveness-msg').innerHTML = "Yuz tahlil qilinmoqda...";
+                
+                // Canvas orqali kadrni olish
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                const imageData = canvas.toDataURL('image/jpeg');
+
+                // Backend orqali Python API ga yuborish
+                sendFaceIDImage(imageData);
 
             } catch (err) {
                 showError("Kamerani yoqish imkoni bo'lmadi! Iltimos, Telegram orqali kiring.");
@@ -226,19 +229,21 @@
             }
         }
 
-        async function sendFaceIDToken(token) {
+        async function sendFaceIDImage(image) {
             try {
                 const res = await fetch('/login/face-id', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify({ face_token: token })
+                    body: JSON.stringify({ image: image })
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
                     document.getElementById('liveness-msg').innerHTML = "<i class='fa-solid fa-check'></i> Muvaffaqiyatli! Kirilmoqda...";
                     setTimeout(() => window.location.href = data.redirect, 1000);
+                } else {
+                    showError(data.message);
                 }
-            } catch (err) {}
+            } catch (err) { showError('FaceID serveri bilan bog\'lanishda xato'); }
         }
 
         async function requestTelegramOTP() {

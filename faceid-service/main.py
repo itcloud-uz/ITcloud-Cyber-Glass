@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.responses import JSONResponse
 import cv2
 import numpy as np
@@ -7,24 +7,23 @@ import base64
 # import dlib
 from typing import Dict
 
+import os
+
 app = FastAPI(title="ITcloud Face ID & Liveness API")
 
-# Fake (Mock) liveness check and face matching logic for testing
-# Real production code requires importing DeepFace and computing embeddings.
-def extract_face_embeddings(image_np):
-    # try:
-    #     res = DeepFace.represent(image_np, model_name="Facenet", enforce_detection=True)
-    #     return res[0]["embedding"]
-    # except Exception as e:
-    #     return None
-    pass
+API_KEY = os.getenv("FACEID_API_KEY", "itcloud_secret_faceid_2026")
 
 @app.post("/api/v1/verify-face")
-async def verify_face(payload: Dict):
+async def verify_face(request: Request, payload: Dict):
     """
-    Bu endpoint Frontend tomonidan WebRTC dan olingan rasm (base64) kodini qabul qiladi.
-    Liveness (tiriq ekanligi) va FaceMatch (haqiqiy admin ekani) tekshiriladi.
+    Bu endpoint Laravel Backend tomonidan chaqiriladi.
+    Faqatgina X-API-KEY kaliti mavjud bo'lsa muloqot qiladi.
     """
+    # 0. API KEY Verification
+    key = request.headers.get("X-API-KEY")
+    if key != API_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden: Unauthorized API Access")
+    
     try:
         image_data = payload.get("image", "")
         # base64_str = image_data.split(",")[1] if "," in image_data else image_data
