@@ -349,6 +349,9 @@
         <div class="nav-item" onclick="switchTab('templates')">
             <i class="fa-solid fa-layer-group"></i> Shablonlar
         </div>
+        <div class="nav-item" onclick="switchTab('ai-developer')">
+            <i class="fa-solid fa-code"></i> Dasturchi Bo'limi
+        </div>
         <div class="nav-item" onclick="switchTab('bot-manager')">
             <i class="fa-solid fa-tower-cell"></i> Kanallar & Botlar
         </div>
@@ -544,6 +547,23 @@
             </div>
         </div>
         
+        <div id="ai-developer" class="view-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2>Antigravity Pipeline 🛸 <small style="font-size: 0.5em; color: var(--neon-cyan);">Prompt-Driven Factory</small></h2>
+                <button class="btn-ios btn-neon" onclick="document.getElementById('ai-project-modal').style.display='flex'"><i class="fa-solid fa-wand-magic-sparkles"></i> Yangi Loyiha Arxitekturasini Qurish</button>
+            </div>
+
+            <div class="glass-panel" style="padding: 20px;">
+                <h3 style="margin-bottom: 15px;"><i class="fa-solid fa-list-check"></i> Loyihalar Konveyeri</h3>
+                <div id="ai-projects-list">
+                    <!-- Dinamik ravishda to'ldiriladi -->
+                    <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+                        Hozircha AI orqali yaratilgan loyihalar yo'q. Pipeline'ni ishga tushiring!
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="employees" class="view-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                 <h2>Xodimlar va Master Adminlar</h2>
@@ -1074,6 +1094,57 @@
         </div>
     </div>
 
+    <!-- AI Project Constructor Modal -->
+    <div id="ai-project-modal" class="modal-overlay" onclick="if(event.target === this) this.style.display='none'">
+        <div class="glass-modal" style="max-width: 700px;">
+            <div class="modal-title">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Antigravity Arxitektor
+            </div>
+            <form id="aiProjectForm" onsubmit="event.preventDefault(); submitAiProject();">
+                <div class="form-group">
+                    <label>Loyiha Nomi</label>
+                    <input type="text" id="ai_p_name" class="form-control" placeholder="Masalan: Milliy Ta'lim CRM" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Soha / Kategoriya</label>
+                        <select id="ai_p_category" class="form-control">
+                            <option value="edu">O'quv Markazi</option>
+                            <option value="medical">Klinika / Tibbiyot</option>
+                            <option value="retail">Savdo / Magaza</option>
+                            <option value="service">Xizmat Ko'rsatish</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subdomen</label>
+                        <input type="text" id="ai_p_domain" class="form-control" placeholder="edu-test" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Kerakli Jadvallar (Database Schema)</label>
+                    <textarea id="ai_p_tables" class="form-control" style="height: 80px;" placeholder="Masalan: students (ism, tel, guruh), courses (nomi, narxi)..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Qo'shimcha Xususiyatlar</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px;">
+                        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="feat" value="tg_bot"> Telegram Bot</label>
+                        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="feat" value="sms"> SMS Xabarnoma</label>
+                        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="feat" value="payme"> Payme/Click Integratsiya</label>
+                        <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="feat" value="stats"> Grafik Analitika</label>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">🚀 Pipeline'ni Ishga Tushirish</button>
+                    <button type="button" class="btn-ios" onclick="document.getElementById('ai-project-modal').style.display='none'" style="flex: 1;">Orqaga</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Upload Modal -->
     <div id="uploadModal" class="modal-overlay" onclick="if(event.target === this) closeUploadModal()">
         <div class="glass-modal">
@@ -1341,6 +1412,32 @@
                     alert("Pochtada yoki bazada muammo. " + (data.message || ''));
                 }
             } catch(e) { alert("Xatolik. Rasm hajmi juda katta bo'lishi mumkin."); }
+        }
+        async function submitAiProject() {
+            const name = document.getElementById('ai_p_name').value;
+            const category = document.getElementById('ai_p_category').value;
+            const domain = document.getElementById('ai_p_domain').value;
+            const tables = document.getElementById('ai_p_tables').value;
+            const features = Array.from(document.querySelectorAll('input[name="feat"]:checked')).map(cb => cb.value);
+
+            simulateAIAction("Pipeline ishga tushirildi. Antigravity Arxitektor loyihani tahlil qilmoqda...");
+            document.getElementById('ai-project-modal').style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_PREFIX}/ai-projects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ name, category, domain, tables, features })
+                });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    simulateAIAction("Loyiha qurilmoqda. Antigravity AI Senior dasturchilar kodi yozishni boshladi...");
+                    setTimeout(() => location.reload(), 3000);
+                }
+            } catch(e) {
+                console.error(e);
+            }
         }
 
         // Templates Management UI
@@ -1698,8 +1795,44 @@
             if(targetSection) targetSection.classList.add('active');
             if(navItem) navItem.classList.add('active');
 
+            if(tabId === 'ai-developer') loadAiProjects();
+
             // Save to storage
             localStorage.setItem('activeTab', tabId);
+        }
+
+        async function loadAiProjects() {
+            try {
+                const res = await fetch(`${API_PREFIX}/ai-projects`);
+                const projects = await res.json();
+                const list = document.getElementById('ai-projects-list');
+                
+                if (projects.length === 0) {
+                    list.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">Hozircha AI loyihalar yo'q. Pipeline'ni ishga tushiring!</div>`;
+                    return;
+                }
+
+                list.innerHTML = projects.map(p => `
+                    <div class="tenant-row" style="margin-bottom: 12px; align-items: center;">
+                        <div>
+                            <b><i class="fa-solid fa-microchip" style="color:var(--neon-cyan)"></i> ${p.name}</b><br>
+                            <small style="opacity: 0.5;">Domain: ${p.tenant.domain}.itcloud.uz</small>
+                        </div>
+                        <div style="flex: 1; padding: 0 20px;">
+                            <div style="font-size: 10px; margin-bottom: 4px; display:flex; justify-content:space-between;">
+                                <span>Status: ${p.status.toUpperCase()}</span>
+                                <span>${p.progress}%</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;">
+                                <div style="width: ${p.progress}%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); box-shadow: 0 0 10px var(--neon-cyan);"></div>
+                            </div>
+                        </div>
+                        <div style="width: 120px; text-align: right;">
+                             <span class="status-badge status-${p.status === 'deployed' ? 'active' : 'pending'}">${p.status}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {}
         }
 
         // AI Agent Hub Features

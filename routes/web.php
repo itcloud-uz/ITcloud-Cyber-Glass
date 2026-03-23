@@ -121,6 +121,10 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         Route::post('/webhook/click', [\App\Http\Controllers\Api\PaymentController::class, 'handlePaymeWebhook']) // Reuse logic for mock
             ->middleware('webhook_source:click');
 
+        // AI Projects (Antigravity Pipeline)
+        Route::get('/api/ai-projects', [\App\Http\Controllers\Api\AiProjectController::class, 'index']);
+        Route::post('/api/ai-projects', [\App\Http\Controllers\Api\AiProjectController::class, 'store']);
+
         // Employees API
         Route::post('/api/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'store']);
     });
