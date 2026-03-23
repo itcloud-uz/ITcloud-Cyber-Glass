@@ -49,7 +49,7 @@ class AuthController extends Controller
             $response = \Illuminate\Support\Facades\Http::withHeaders([
                 'X-API-KEY' => $apiKey,
                 'Accept' => 'application/json'
-            ])->post('http://127.0.0.1:8000/api/v1/verify-face', [
+            ])->post('http://127.0.0.1:8001/api/v1/verify-face', [
                 'image' => $image,
                 'user_id' => $user->id
             ]);
