@@ -528,6 +528,7 @@
                                 <button class="btn-ios btn-neon" onclick="promptSubscription({{ $tenant->id }})">+ Uzaytirish</button>
                                 <button class="btn-ios" style="color: var(--neon-pink); border: 1px solid var(--neon-pink);" onclick="changeTenantStatus({{ $tenant->id }}, 'blocked')">Bloklash</button>
                                 <button class="btn-ios" onclick="promptEditTenant({{ $tenant->id }}, '{{ $tenant->company_name }}', '{{ $tenant->domain }}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-ios" style="color: #ff3b30;" onclick="deleteTenant({{ $tenant->id }})"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         @else
                             <div><span class="status-badge status-blocked"><i class="fa-solid fa-lock" style="font-size: 10px;"></i> Bloklangan</span></div>
@@ -535,6 +536,7 @@
                             <div style="display: flex; gap: 10px;">
                                 <button class="btn-ios btn-neon" onclick="changeTenantStatus({{ $tenant->id }}, 'active')">Ochish</button>
                                 <button class="btn-ios" onclick="promptSubscription({{ $tenant->id }})">+ Uzaytirish</button>
+                                <button class="btn-ios" style="color: #ff3b30;" onclick="deleteTenant({{ $tenant->id }})"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         @endif
                     </div>
@@ -1322,6 +1324,21 @@
                     headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
                 });
                 location.reload();
+            } catch(e) { }
+        }
+
+        async function deleteTenant(id) {
+            if(!confirm("Haqiqatan ham bu mijozni tizimdan butkul o'chirmoqchimisiz?")) return;
+            try {
+                let res = await fetch(`${API_PREFIX}/tenants/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    simulateAIAction("Mijoz tizimdan o'chirildi.");
+                    setTimeout(() => location.reload(), 1000);
+                }
             } catch(e) { }
         }
 

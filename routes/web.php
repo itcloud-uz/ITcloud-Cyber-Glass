@@ -27,6 +27,7 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         // Tenants API (CRUD)
         Route::post('/api/tenants', [\App\Http\Controllers\Api\TenantController::class, 'store']);
         Route::put('/api/tenants/{id}', [\App\Http\Controllers\Api\TenantController::class, 'update']);
+        Route::delete('/api/tenants/{id}', [\App\Http\Controllers\Api\TenantController::class, 'destroy']);
         Route::patch('/api/tenants/{id}/status', [\App\Http\Controllers\Api\TenantController::class, 'changeStatus']);
         Route::post('/api/tenants/{id}/subscription', [\App\Http\Controllers\Api\TenantController::class, 'addSubscription']);
         Route::post('/api/tenants/{id}/upload', function(\Illuminate\Http\Request $request, $id) {
