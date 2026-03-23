@@ -83,6 +83,15 @@ class GeminiAgentService
             $systemInstruction .= " Senga bitta MAXSUS VAZIFA (TASK) yuklatilgan: " . $currentTask . ". Barcha javoblaringda faqat shu vazifani inobatga ol va uning doirasida ishla.";
         }
 
+        // RAG Foundation: Fetch Knowledge Base Context
+        if ($botId) {
+            $knowledge = \App\Models\KnowledgeBase::where('bot_id', $botId)->get();
+            if ($knowledge->count() > 0) {
+                $context = $knowledge->map(fn($kb) => "Hujjat ({$kb->file_name}): {$kb->content}")->implode("\n");
+                $systemInstruction .= "\n\nQuyidagi qo'shimcha bilimlar bazasidan foydalan (RAG): \n" . $context;
+            }
+        }
+
         $tools_payload = [];
         if (!empty($tools)) {
             $tools_payload = [['function_declarations' => $tools]];

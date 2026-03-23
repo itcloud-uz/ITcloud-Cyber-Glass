@@ -25,20 +25,12 @@ class TelegramWebhookController extends Controller
         
         if (empty($message)) return response()->json(['status' => 'ignored']);
 
-        // AI Agentdan javob olish
-        $response = $this->aiAgent->handleIncomingMessage($bot->agent_type, $message, $chatId);
-
-        // Telegramga javob qaytarish
-        $url = "https://api.telegram.org/bot{$token}/sendMessage";
-        \Illuminate\Support\Facades\Http::post($url, [
-            'chat_id' => $chatId,
-            'text' => $response,
-            'parse_mode' => 'Markdown'
-        ]);
+        // AI Agent ishini Queue ga o'tkazish
+        \App\Jobs\ProcessAiChatMessage::dispatch($message, (string)$chatId, $bot->id, $bot->agent_type);
 
         return response()->json([
             'status' => 'success',
-            'sent' => true
+            'queued' => true
         ]);
     }
 }

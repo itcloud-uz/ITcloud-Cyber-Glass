@@ -72,8 +72,7 @@ class WebhookController extends Controller
         $text = $message['text']['body'] ?? '';
 
         if (!empty($text)) {
-            $aiResponse = $this->gemini->handleIncomingMessage($text, $from, $bot->id);
-            MultiChannelService::sendWhatsApp($bot->phone_number_id, $from, $aiResponse, $bot->token);
+            \App\Jobs\ProcessAiChatMessage::dispatch($text, $from, $bot->id, $bot->agent_type);
         }
     }
 
@@ -90,8 +89,7 @@ class WebhookController extends Controller
         $text = $messaging['message']['text'] ?? '';
 
         if ($senderId && !empty($text)) {
-            $aiResponse = $this->gemini->handleIncomingMessage($text, $senderId, $bot->id);
-            MultiChannelService::sendInstagram($bot->instagram_account_id, $senderId, $aiResponse, $bot->token);
+            \App\Jobs\ProcessAiChatMessage::dispatch($text, $senderId, $bot->id, $bot->agent_type);
         }
     }
 }

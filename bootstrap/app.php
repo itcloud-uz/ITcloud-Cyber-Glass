@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->validateCsrfTokens(except: [
             '/webhook/*',
+            '/webhook/payme',
+            '/webhook/click',
+        ]);
+        $middleware->alias([
+            'webhook_source' => \App\Http\Middleware\VerifyWebhookSource::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

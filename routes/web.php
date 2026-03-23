@@ -111,6 +111,13 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
         Route::get('/webhook/meta/{id}', [\App\Http\Controllers\Api\WebhookController::class, 'verifyMeta']);
         Route::post('/webhook/meta/{id}', [\App\Http\Controllers\Api\WebhookController::class, 'handleMeta']);
 
+        // Payment Webhooks (Secured with Middleware)
+        Route::post('/webhook/payme', [\App\Http\Controllers\Api\PaymentController::class, 'handlePaymeWebhook'])
+            ->middleware('webhook_source:payme');
+
+        Route::post('/webhook/click', [\App\Http\Controllers\Api\PaymentController::class, 'handlePaymeWebhook']) // Reuse logic for mock
+            ->middleware('webhook_source:click');
+
         // Employees API
         Route::post('/api/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'store']);
     });

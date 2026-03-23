@@ -33,4 +33,18 @@ class MultiChannelService
             'message' => ['text' => $message]
         ]);
     }
+
+    /**
+     * Send message back to Telegram
+     */
+    public static function sendTelegram($botToken, $chatId, $message)
+    {
+        $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
+        
+        return Http::post($url, [
+            'chat_id' => $chatId,
+            'text' => $message,
+            'parse_mode' => 'Markdown'
+        ]);
+    }
 }
