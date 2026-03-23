@@ -9,6 +9,9 @@ use App\Http\Middleware\CheckTailscaleIP;
 // Dynamic Telegram Webhook
 Route::post('/api/webhook/telegram/{token}', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'handle']);
 
+// Public Storefront
+Route::get('/storefront', [\App\Http\Controllers\StorefrontController.php, 'index'])->name('storefront');
+
 // Protect admin routes with Tailscale IP check
 Route::middleware([CheckTailscaleIP::class])->group(function () {
 

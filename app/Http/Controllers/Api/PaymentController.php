@@ -27,6 +27,9 @@ class PaymentController extends Controller
             $tenant->status = 'active'; // Blokdan yechish
             $tenant->save();
 
+            // 1. Zero-Touch AUTO-PROVISIONING ishga tushirish
+            \App\Jobs\DeployTenantInstance::dispatch($tenant->id);
+
             // 1.1 Referral Bonus logic
             if ($tenant->referred_by_id) {
                 $referrer = Tenant::find($tenant->referred_by_id);

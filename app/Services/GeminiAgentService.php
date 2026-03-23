@@ -43,6 +43,14 @@ class GeminiAgentService
                     'message' => ['type' => 'STRING']
                 ],
                 'required' => ['target_agent', 'message']
+            ]],
+            ['name' => 'query_business_data', 'description' => 'Bazadan moliyaviy va mijozlar haqida analitik ma\'lumotlarni olish (masalan eng ko\'p sotilgan, daromad va h.k).', 'parameters' => [
+                'type' => 'OBJECT',
+                'properties' => [
+                    'question_type' => ['type' => 'STRING', 'enum' => ['sales_performance', 'churn_rate', 'popular_services', 'top_leads']],
+                    'time_range' => ['type' => 'STRING', 'enum' => ['last_month', 'this_year', 'all_time']]
+                ],
+                'required' => ['question_type']
             ]]
         ];
 
@@ -178,6 +186,24 @@ class GeminiAgentService
                             'details' => "Target: {$target}. Xabar: {$msg}"
                         ]);
                         return "Xabar {$target} agentiga yuborildi. Ular tez orada javob berishadi.";
+                    }
+
+                    if ($funcName === 'query_business_data') {
+                        $type = $args['question_type'];
+                        if ($type === 'sales_performance') {
+                            $total = \App\Models\Subscription::sum('amount_paid');
+                            $count = \App\Models\Subscription::where('paid_at', '>', Carbon::now()->subMonth())->count();
+                            return "O'tgan oyga nisbatan daromad tahlili: Jami tushum " . number_format($total, 0, ',', ' ') . " UZS. Oxirgi 30 kunda $count ta yangi to'lov amalga oshirilgan.";
+                        }
+                        if ($type === 'popular_services') {
+                            $top = \App\Models\Template::take(3)->get()->map(fn($t) => "*{$t->name}*")->implode(', ');
+                            return "Hozirda eng ommabop xizmatlarimiz: $top. Ularga qiziqish yuqori.";
+                        }
+                        if ($type === 'top_leads') {
+                            $leads = \App\Models\Lead::latest()->take(3)->get()->map(fn($l) => $l->customer_name)->implode(', ');
+                            return "Eng oxirgi va qiziqqan mijozlar (Leads): $leads. Ularga tezroq qo'ng'iroq qilishni tavsiya qilaman.";
+                        }
+                        return "Hozirda bu turdagi ma'lumotni tahlil qila olmayman, lekin tez orada o'rganaman.";
                     }
                 }
             }
