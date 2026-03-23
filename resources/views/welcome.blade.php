@@ -793,15 +793,26 @@
                     @if(isset($telegramBots))
                         @foreach($telegramBots as $bot)
                         <div class="glass-panel" style="padding: 20px; border: 1px solid {{ $bot->is_active ? 'var(--neon-cyan)' : 'var(--neon-pink)' }};">
-                            <h4 style="color: var(--neon-cyan); margin-bottom: 5px;">{{ $bot->name }}</h4>
-                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px; font-family: monospace; overflow: hidden; text-overflow: ellipsis;">{{ substr($bot->token, 0, 15) }}...</div>
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:10px;">
+                                <h4 style="color: var(--neon-cyan);">{{ $bot->name }}</h4>
+                                <i class="fa-{{ $bot->channel_type === 'telegram' ? 'brands fa-telegram' : ($bot->channel_type === 'whatsapp' ? 'brands fa-whatsapp' : ($bot->channel_type === 'instagram' ? 'brands fa-instagram' : 'solid fa-brain')) }}" 
+                                   style="color: {{ $bot->channel_type === 'whatsapp' ? '#25D366' : ($bot->channel_type === 'instagram' ? '#E1306C' : 'var(--neon-cyan)') }}; font-size: 18px;"></i>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px; font-family: monospace; overflow: hidden; text-overflow: ellipsis;">
+                                {{ $bot->channel_type === 'telegram' ? 'TG: ' . substr($bot->token, 0, 10) . '...' : ($bot->channel_type === 'whatsapp' ? 'WA: ' . $bot->phone_number_id : ($bot->channel_type === 'instagram' ? 'IG: ' . $bot->instagram_account_id : 'Internal AI')) }}
+                            </div>
+                            @if($bot->channel_type === 'whatsapp' || $bot->channel_type === 'instagram')
+                            <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; font-size: 10px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                                <span style="opacity: 0.5;">Webhook URL:</span><br>
+                                <code style="color: var(--neon-cyan);">{{ url("/") }}/webhook/meta/{{ $bot->id }}</code>
+                            </div>
+                            @endif
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <span style="font-size: 12px; color: var(--text-muted);">Vazifasi: <b>{{ strtoupper($bot->agent_type) }}</b></span>
                                 <div class="ios-toggle {{ $bot->is_active ? 'on' : '' }}" onclick="toggleBot({{ $bot->id }}, {{ $bot->is_active ? 0 : 1 }})"></div>
                             </div>
                             <div style="display: flex; gap: 5px;">
-                                <button class="btn-ios" style="flex:1;" onclick="promptEditBot({{ $bot->id }}, '{{ $bot->name }}', '{{ $bot->token }}', '{{ $bot->agent_type }}')"><i class="fa-solid fa-pen"></i></button>
-                                <button class="btn-ios" style="flex:1; color: var(--neon-cyan);" onclick="setBotWebhook({{ $bot->id }})" title="Webhookni O'rnatish"><i class="fa-solid fa-link"></i></button>
+                                <button class="btn-ios" style="flex:1;" onclick='openBotModal({!! json_encode($bot) !!})'><i class="fa-solid fa-pen"></i> Tahrirlash</button>
                                 <button class="btn-ios" style="flex:1; color: var(--neon-pink);" onclick="deleteBot({{ $bot->id }})"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
@@ -956,28 +967,54 @@
             <div class="modal-title" id="botModalHeader">Yangi AI Agent Qo'shish</div>
             <form id="botForm">
                 <input type="hidden" id="edit_bot_id">
-                <div class="form-group">
-                    <label>Agent Nomi</label>
-                    <input type="text" id="bot_name" class="form-control" placeholder="Masalan: Markaziy Sotuvchi" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Agent Nomi</label>
+                        <input type="text" id="bot_name" class="form-control" placeholder="Agent nomi..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Agent Roli</label>
+                        <select id="bot_agent_type" class="form-control">
+                            <option value="sales">Sotuv Menejeri</option>
+                            <option value="finance">Moliya Nazorati</option>
+                            <option value="support">Texnik Yordam</option>
+                        </select>
+                    </div>
                 </div>
+
                 <div class="form-group">
-                    <label>Agent Turi / Roli</label>
-                    <select id="bot_agent_type" class="form-control">
-                        <option value="sales">Sotuv Menejeri (Sales)</option>
-                        <option value="finance">Moliya Nazorati (Finance)</option>
-                        <option value="support">Texnik Yordam (Support)</option>
-                        <option value="custom">Maxsus Agent (Custom)</option>
+                    <label>Kanal Turi</label>
+                    <select id="bot_channel_type" class="form-control" onchange="toggleChannelFields(this.value)">
+                        <option value="internal">Internal AI (Dashboard faqat)</option>
+                        <option value="telegram">Telegram Bot</option>
+                        <option value="whatsapp">WhatsApp Business (Meta)</option>
+                        <option value="instagram">Instagram Direct (Meta)</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Telegram Token (ixtiyoriy)</span>
-                        <div style="font-size: 10px; opacity: 0.5;">Bo'sh qolsa ichki AI agent bo'ladi</div>
-                    </label>
-                    <input type="text" id="bot_token" class="form-control" placeholder="BOT_TOKEN_HERE">
+
+                <!-- Dynamic Fields -->
+                <div id="field_token" class="form-group" style="display:none;">
+                    <label id="label_token">Access Token / Bot Token</label>
+                    <input type="text" id="bot_token" class="form-control" placeholder="Kiriting...">
                 </div>
+
+                <div id="field_meta" style="display:none;">
+                    <div class="form-group">
+                        <label>Webhook Verify Token (Meta uchun o'zingiz o'ylab toping)</label>
+                        <input type="text" id="bot_verify_token" class="form-control" placeholder="Masalan: itcloud_secret_2026">
+                    </div>
+                    <div class="form-group" id="field_wa_id" style="display:none;">
+                        <label>WhatsApp Phone Number ID</label>
+                        <input type="text" id="bot_wa_id" class="form-control" placeholder="1059518...243">
+                    </div>
+                    <div class="form-group" id="field_ig_id" style="display:none;">
+                        <label>Instagram Account ID</label>
+                        <input type="text" id="bot_ig_id" class="form-control" placeholder="178414...332">
+                    </div>
+                </div>
+
                 <div class="modal-actions">
-                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Agentni Saqlash</button>
+                    <button type="submit" class="btn-ios btn-neon" style="flex: 2;">Saqlash</button>
                     <button type="button" class="btn-ios" onclick="closeBotModal()" style="flex: 1;">Bekor qilish</button>
                 </div>
             </form>
@@ -1404,12 +1441,34 @@
         }
 
         // Bot Management UI
-        function openBotModal(id = null, name = '', token = '', type = 'sales') {
-            document.getElementById('edit_bot_id').value = id || '';
-            document.getElementById('bot_name').value = name;
-            document.getElementById('bot_token').value = token;
-            document.getElementById('bot_agent_type').value = type;
-            document.getElementById('botModalHeader').innerText = id ? "Agentni Tahrirlash" : "Yangi AI Agent Qo'shish";
+        function toggleChannelFields(type) {
+            document.getElementById('field_token').style.display = (type === 'internal') ? 'none' : 'block';
+            document.getElementById('field_meta').style.display = (type === 'whatsapp' || type === 'instagram') ? 'block' : 'none';
+            document.getElementById('field_wa_id').style.display = (type === 'whatsapp') ? 'block' : 'none';
+            document.getElementById('field_ig_id').style.display = (type === 'instagram') ? 'block' : 'none';
+            
+            if(type === 'telegram') document.getElementById('label_token').innerText = "Telegram Bot Token";
+            else if(type === 'whatsapp' || type === 'instagram') document.getElementById('label_token').innerText = "Meta Permanent Access Token";
+        }
+
+        function openBotModal(bot = null) {
+            if (bot) {
+                document.getElementById('edit_bot_id').value = bot.id;
+                document.getElementById('bot_name').value = bot.name;
+                document.getElementById('bot_agent_type').value = bot.agent_type;
+                document.getElementById('bot_channel_type').value = bot.channel_type || (bot.token ? 'telegram' : 'internal');
+                document.getElementById('bot_token').value = bot.token || '';
+                document.getElementById('bot_verify_token').value = bot.meta_verify_token || '';
+                document.getElementById('bot_wa_id').value = bot.phone_number_id || '';
+                document.getElementById('bot_ig_id').value = bot.instagram_account_id || '';
+                toggleChannelFields(document.getElementById('bot_channel_type').value);
+                document.getElementById('botModalHeader').innerText = "Agentni Tahrirlash";
+            } else {
+                document.getElementById('botForm').reset();
+                document.getElementById('edit_bot_id').value = '';
+                toggleChannelFields('internal');
+                document.getElementById('botModalHeader').innerText = "Yangi AI Agent Qo'shish";
+            }
             document.getElementById('botModal').classList.add('active');
         }
 
@@ -1420,9 +1479,16 @@
         document.getElementById('botForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             let id = document.getElementById('edit_bot_id').value;
-            let name = document.getElementById('bot_name').value;
-            let token = document.getElementById('bot_token').value;
-            let agent_type = document.getElementById('bot_agent_type').value;
+            let payload = {
+                name: document.getElementById('bot_name').value,
+                agent_type: document.getElementById('bot_agent_type').value,
+                channel_type: document.getElementById('bot_channel_type').value,
+                token: document.getElementById('bot_token').value,
+                meta_verify_token: document.getElementById('bot_verify_token').value,
+                phone_number_id: document.getElementById('bot_wa_id').value,
+                instagram_account_id: document.getElementById('bot_ig_id').value,
+                is_active: 1
+            };
 
             let url = id ? `${API_PREFIX}/bots/${id}` : `${API_PREFIX}/bots`;
             let method = id ? 'PUT' : 'POST';
@@ -1431,11 +1497,11 @@
                 let res = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ name, token, agent_type, is_active: 1 })
+                    body: JSON.stringify(payload)
                 });
                 let data = await res.json();
                 if(data.status === 'success') {
-                    simulateAIAction(id ? "Agent tahrirlandi." : "Yangi AI agent ishga tushirildi!");
+                    simulateAIAction(id ? "Agent sozlamalari yangilandi." : "Yangi AI agent ulandi!");
                     closeBotModal();
                     setTimeout(() => location.reload(), 1500);
                 }

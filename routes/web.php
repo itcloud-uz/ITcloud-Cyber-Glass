@@ -103,9 +103,13 @@ Route::middleware([CheckTailscaleIP::class])->group(function () {
 
         // Leads API
         Route::patch('/api/leads/{id}/status', function(\Illuminate\Http\Request $request, $id) {
-            \App\Models\Lead::where('id', $id)->update(['status' => $request->status]);
+            \App\Models\Lead::findOrFail($id)->update(['status' => $request->status]);
             return response()->json(['status' => 'success']);
         });
+
+        // Meta Webhooks (Universal)
+        Route::get('/webhook/meta/{id}', [\App\Http\Controllers\Api\WebhookController::class, 'verifyMeta']);
+        Route::post('/webhook/meta/{id}', [\App\Http\Controllers\Api\WebhookController::class, 'handleMeta']);
 
         // Employees API
         Route::post('/api/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'store']);
