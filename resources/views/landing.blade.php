@@ -359,8 +359,85 @@
         </div>
     </section>
 
+    <!-- ITcloud Academy Section -->
+    <section id="academy" style="padding: 100px 10%; background: linear-gradient(180deg, rgba(5,5,10,0) 0%, rgba(176,38,255,0.05) 50%, rgba(5,5,10,0) 100%); position: relative;">
+        <div style="text-align: center; margin-bottom: 60px;">
+            <h2 style="font-size: 56px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">
+                ITcloud <span style="color: var(--neon-purple); text-shadow: 0 0 20px rgba(176,38,255,0.5);">Academy</span>
+            </h2>
+            <p style="font-size: 20px; opacity: 0.7; max-width: 700px; margin: 20px auto;">
+                {{ __('Kelajak dasturchilarini tayyorlaymiz. Amaliyot va ish bilan ta\'minlash kafolati bilan.') }}
+            </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: start;">
+            <div class="glass-panel" style="padding: 40px; border-top: 3px solid var(--neon-purple);">
+                <h3 style="margin-bottom: 30px; font-size: 24px; color: var(--neon-purple);"><i class="fa-solid fa-graduation-cap"></i> {{ __("O'quvchi Bo'lish uchun Ariza") }}</h3>
+                <form id="academyForm">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("To'liq Ismingiz") }}</label>
+                            <input type="text" id="acad_name" required style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Email") }}</label>
+                            <input type="email" id="acad_email" required style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Telefon") }}</label>
+                            <input type="text" id="acad_phone" required placeholder="+998" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Yashash Joyingiz") }}</label>
+                            <input type="text" id="acad_location" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div>
+                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Yo'nalish") }}</label>
+                            <select id="acad_direction" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
+                                <option value="frontend">Frontend (Vue/React)</option>
+                                <option value="backend">Backend (Laravel/Python)</option>
+                                <option value="ai">AI & Prompt Engineering</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Daraja") }}</label>
+                            <select id="acad_level" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
+                                <option value="beginner">Noldan (Beginner)</option>
+                                <option value="intermediate">Kichik tajriba (Junior)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-ios" style="width: 100%; padding: 18px; background: var(--neon-purple); border-radius: 15px; font-size: 16px; box-shadow: 0 0 20px rgba(176,38,255,0.3);">
+                        {{ __('Arizani Yuborish & AI Review') }} <i class="fa-solid fa-paper-plane" style="margin-left: 10px;"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div style="padding: 20px;">
+                <div class="glass-panel" style="padding: 30px; margin-bottom: 20px;">
+                    <h4 style="color: var(--neon-cyan); margin-bottom: 15px;"><i class="fa-solid fa-code-branch"></i> {{ __("ITcloud Sandbox") }}</h4>
+                    <p style="font-size: 15px; opacity: 0.8; line-height: 1.6;">{{ __("O'quvchilar real loyihalarda xavfsiz Sandbox hududida ishlashadi. Barcha yozilgan kodlar AI Mentor tomonidan tahlil qilinadi va havfsiz bo'lsagina asosiy loyihaga integratsiya qilinadi.") }}</p>
+                </div>
+                <div class="glass-panel" style="padding: 30px; margin-bottom: 20px;">
+                    <h4 style="color: var(--neon-purple); margin-bottom: 15px;"><i class="fa-solid fa-sack-dollar"></i> {{ __("Bounty Tizimi") }}</h4>
+                    <p style="font-size: 15px; opacity: 0.8; line-height: 1.6;">{{ __("Vazifalarni muvaffaqiyatli bajargan o'quvchilar nafaqat XP (tajriba), balki real pullik mukofotlar va oylik maosh olish imkoniyatiga ega bo'ladilar.") }}</p>
+                </div>
+                <div class="glass-panel" style="padding: 30px;">
+                    <h4 style="color: var(--neon-pink); margin-bottom: 15px;"><i class="fa-solid fa-shield-check"></i> {{ __("ISA Kafolati") }}</h4>
+                    <p style="font-size: 15px; opacity: 0.8; line-height: 1.6;">{{ __("Bepul o'qish evaziga bitiruvchilar ITcloud jamoasida 1.5 yil davomida kafolatlangan ish bilan ta'minlanadi. Bu sizning kelajakdagi karyerangiz!)") }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <footer style="background: rgba(0,0,0,0.5); padding: 80px 10% 40px; border-top: 1px solid var(--neon-cyan);">
-        <p style="opacity: 0.6; letter-spacing: 1px;">&copy; 2026 ITcloud Cyber-Glass Engine. {{ __('Built on years of international experience.') }}</p>
+        <p style="opacity: 0.6; letter-spacing: 1px;" ondblclick="secretEntryPrompt()">
+            &copy; 2026 ITcloud Cyber-Glass Engine. {{ __('Built on years of international experience.') }}
+        </p>
         <div style="margin-top: 20px; font-size: 12px; color: var(--neon-cyan); opacity: 0.4;">
             AES-256 Encrypted Connection | AI Guard Active
         </div>
@@ -418,6 +495,49 @@
                 e.target.reset();
             }, 1000);
         });
+        document.getElementById('academyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            Swal.fire({ title: 'AI Review Jarayonda...', background: '#0a0a1a', color: '#fff', didOpen: () => Swal.showLoading() });
+            
+            const data = {
+                name: document.getElementById('acad_name').value,
+                email: document.getElementById('acad_email').value,
+                phone: document.getElementById('acad_phone').value,
+                location: document.getElementById('acad_location').value,
+                direction: document.getElementById('acad_direction').value,
+                level: document.getElementById('acad_level').value
+            };
+
+            try {
+                const res = await fetch('/api/academy/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if(result.status === 'success') {
+                    Swal.fire('Muvaffaqiyat!', 'Ariza qabul qilindi. AI agent tahlil natijasini Telegram va Pochtangizga yuboradi!', 'success');
+                    e.target.reset();
+                }
+            } catch(e) { Swal.fire('Xato', 'Ulanish xatosi', 'error'); }
+        });
+
+        function secretEntryPrompt() {
+            Swal.fire({
+                title: 'Secret Portal Access',
+                input: 'password',
+                inputPlaceholder: 'Student/Dev Token',
+                background: '#0a0a1a',
+                color: '#fff',
+                confirmButtonColor: 'var(--neon-purple)',
+                showCancelButton: true
+            }).then((result) => {
+                if (result.value) {
+                    // Simulation: Verification and redirect
+                    Swal.fire('Identity Verified', 'Redirecting to Nexus Dev Panel...', 'success');
+                }
+            });
+        }
 
         // Initialize Background Stars
         function initStars() {

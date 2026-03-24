@@ -53,4 +53,22 @@ class AiChatController extends Controller
             'message' => 'Vazifa agentga muvaffaqiyatli yuklandi.'
         ]);
     }
+
+    public function getActiveChats()
+    {
+        $chats = \App\Models\AiLog::select('chat_id', 'agent_type', \DB::raw('MAX(created_at) as last_time'))
+                    ->whereNotNull('chat_id')
+                    ->groupBy('chat_id', 'agent_type')
+                    ->orderBy('last_time', 'desc')
+                    ->get();
+        return response()->json($chats);
+    }
+
+    public function getConversation($chatId)
+    {
+        $history = \App\Models\AiLog::where('chat_id', $chatId)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+        return response()->json($history);
+    }
 }

@@ -7,93 +7,103 @@ use App\Models\User;
 use App\Models\ClientSecurityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 class TelegramWebhookController extends Controller
 {
-    protected $botToken = '8304799073:AAGOi1nbw29OkKY_YhrP3kOJnRGRVq-qVPY';
+    protected $verificationBotToken = '8304799073:AAGOi1nbw29OkKY_YhrP3kOJnRGRVq-qVPY';
+    protected $academyBotToken = '8295962421:AAF3uH3did42i14YPZPMYqkrKDfHy8VlTKE';
 
-    public function handle(Request $request)
+    public function handle(Request $request, $botType = 'verification')
     {
         $update = $request->all();
+        if (!isset($update['message'])) {
+            return response()->json(['status' => 'ok']);
+        }
 
-        if (isset($update['message'])) {
-            $message = $update['message'];
-            $chatId = $message['chat']['id'];
+        $message = $update['message'];
+        $chatId = $message['chat']['id'];
+        $token = ($botType === 'academy') ? $this->academyBotToken : $this->verificationBotToken;
 
-            // /start hook (e.g. /start {hash})
-            if (isset($message['text']) && (str_starts_with($message['text'], '/start ') || $message['text'] === '/start')) {
-                $hash = str_replace('/start ', '', $message['text']);
-                // Agar hash bo'lsa (yangi foydalanuvchi)
-                if($hash && $hash !== '/start') {
-                    $user = User::where('verification_hash', $hash)->first();
-                    if ($user) {
-                        $user->update(['telegram_chat_id' => (string)$chatId]);
-                        $this->sendContactRequest($chatId, "Salom, {$user->name}! Iltimos, raqamingizni yuboring va tasdiqlang:");
-                        return response()->json(['status' => 'ok']);
-                    }
+        // Academy Logic (I-Ticher bot)
+        if ($botType === 'academy') {
+            $this->handleAcademyBot($chatId, $message);
+            return response()->json(['status' => 'ok']);
+        }
+
+        // Standard Verification logic
+        if (isset($message['text']) && (str_starts_with($message['text'], '/start ') || $message['text'] === '/start')) {
+            $hash = str_replace('/start ', '', $message['text']);
+            if($hash && $hash !== '/start') {
+                $user = User::where('verification_hash', $hash)->first();
+                if ($user) {
+                    $user->update(['telegram_chat_id' => (string)$chatId]);
+                    $this->sendContactRequest($token, $chatId, "Salom, {$user->name}! Iltimos, raqamingizni yuboring va tasdiqlang:");
+                    return response()->json(['status' => 'ok']);
                 }
             }
+        }
 
-            // Contact share hook
-            if (isset($message['contact'])) {
-                $phone = $message['contact']['phone_number'];
-                $telegramChatId = $message['chat']['id'];
-                
-                // Oxirgi hash egasini qidirmaymiz (agar polling va bot uzoq kelsa), hashni sessionday yoki biror bazadaki bog'liqlikda (chat_id) ko'rish kerak
-                // Lekin bu yerda `/start hash` orqali telegram_chat_id ni bog'lab keta olamiz deb xisoblaymiz.
-                // Keling, yaxshiroq: /start hash da chat_id ni userga yozib ketamiz.
-                
-                $user = User::where('telegram_chat_id', (string)$chatId)->first();
-                if(!$user) {
-                     // Agar /start hash orqali yozilmagan bo'lsa (masalan biror xato yoki foydalanuvchi to'g'ridan to'g'ri yozsa), 
-                     // bizga hash kerak edi.
-                     // Lekin ko'p holda biz /start hash orqali chat_id ni bog'lab turamiz.
-                }
+        if (isset($message['contact'])) {
+            $phone = $message['contact']['phone_number'];
+            $user = User::where('telegram_chat_id', (string)$chatId)->first();
+            if ($user) {
+                $user->update([
+                    'phone' => $phone,
+                    'is_verified' => true,
+                ]);
 
-                if ($user) {
-                    $user->update([
-                        'phone' => $phone,
-                        'is_verified' => true,
-                        // 'verification_hash' => null, // O'chirib tashlash (user buyrog'i bo'yicha)
-                    ]);
+                ClientSecurityLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'Telegram orqali raqam tasdiqlandi: ' . $phone,
+                    'ip_address' => 'Telegram Bot',
+                    'user_agent' => 'TelegramWebhook',
+                ]);
 
-                    ClientSecurityLog::create([
-                        'user_id' => $user->id,
-                        'action' => 'Telegram orqali raqam tasdiqlandi: ' . $phone,
-                        'ip_address' => 'Telegram Bot',
-                        'user_agent' => 'TelegramWebhook',
-                    ]);
-
-                    $this->sendMessage($chatId, "✅ Tasdiqlandi! Saytga qaytishingiz mumkin.");
-                }
+                $this->sendMessage($token, $chatId, "✅ Tasdiqlandi! Saytga qaytishingiz mumkin.");
             }
         }
 
         return response()->json(['status' => 'ok']);
     }
 
-    protected function sendContactRequest($chatId, $text)
+    protected function sendContactRequest($token, $chatId, $text)
     {
         $keyboard = [
             'keyboard' => [
-                [
-                    ['text' => "📞 Raqamni yuborish va Tasdiqlash", 'request_contact' => true]
-                ]
+                [['text' => "📞 Raqamni yuborish va Tasdiqlash", 'request_contact' => true]]
             ],
             'resize_keyboard' => true,
             'one_time_keyboard' => true
         ];
 
-        return Http::post("https://api.telegram.org/bot{$this->botToken}/sendMessage", [
+        return Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
             'chat_id' => $chatId,
             'text' => $text,
             'reply_markup' => json_encode($keyboard)
         ]);
     }
 
-    protected function sendMessage($chatId, $text)
+    private function handleAcademyBot($chatId, $message)
     {
-        return Http::post("https://api.telegram.org/bot{$this->botToken}/sendMessage", [
+        $text = $message['text'] ?? '';
+        if (str_starts_with($text, '/start')) {
+            $token = trim(str_replace('/start', '', $text));
+            $app = DB::table('academy_applications')->where('access_token', $token)->first();
+            
+            if ($app) {
+                $assessment = json_decode($app->ai_assessment);
+                $logicTest = $assessment->logic_test ?? "I-Ticher dars tayyorlamoqda...";
+                $this->sendMessage($this->academyBotToken, $chatId, "Salom {$app->name}! ITcloud Academy'ga xush kelibsiz. Men I-Ticher o'qituvchingizman. 🎓\n\nSizni tahlil qildim. Mana birinchi mantiqiy topshiringiz:\n\n" . $logicTest);
+            } else {
+                $this->sendMessage($this->academyBotToken, $chatId, "Token xato. Iltimos ariza topshirganingizdan so'ng berilgan link orqali kiring.");
+            }
+        }
+    }
+
+    protected function sendMessage($token, $chatId, $text)
+    {
+        return Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
             'chat_id' => $chatId,
             'text' => $text
         ]);

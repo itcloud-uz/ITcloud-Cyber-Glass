@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'password', 'role', 'passport_number', 'face_id_photo_path', 'is_face_id_enabled'];
+    protected $fillable = ['name', 'email', 'password', 'role', 'passport_number', 'face_id_photo_path', 'is_face_id_enabled', 'permissions'];
     protected $hidden = ['password', 'remember_token'];
 
     use HasFactory, Notifiable;
@@ -27,6 +27,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'permissions' => 'array',
         ];
     }
 }

@@ -241,6 +241,93 @@
         .modal-overlay.active .glass-modal {
             transform: translateY(0);
         }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Permissions Glass Modal */
+        #permissionsModal .glass-modal {
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--neon-cyan);
+            box-shadow: 0 0 50px rgba(0, 255, 204, 0.3);
+            width: 700px; /* Optimized Width */
+            padding: 30px;
+            border-radius: 25px;
+        }
+        .perm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3-column compact grid */
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .perm-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            transition: 0.2s;
+        }
+        .perm-item:hover { background: rgba(0, 255, 204, 0.05); border-color: rgba(0, 255, 204, 0.3); }
+        .perm-item span { font-size: 12px; font-weight: 500; color: white; margin-right: 5px; }
+
+        .ios-toggle { 
+            transform: scale(0.7); /* Smaller toggles for grid */
+            margin-right: -5px;
+        }
+
+        /* SweetAlert2 Premium Personalization (Obsidian Glass Style) */
+        .swal2-popup.swal2-modal {
+            background: rgba(10, 10, 15, 0.95) !important;
+            backdrop-filter: blur(40px) !important;
+            border: 1px solid var(--neon-cyan) !important;
+            border-radius: 30px !important;
+            box-shadow: 0 0 50px rgba(0, 255, 204, 0.2) !important;
+            color: #fff !important;
+            padding: 2.5rem !important;
+        }
+        .swal2-title { color: #fff !important; font-family: 'Outfit', sans-serif !important; font-weight: 800 !important; }
+        .swal2-html-container { color: rgba(255,255,255,0.7) !important; font-size: 15px !important; }
+        .swal2-confirm.swal2-styled {
+            background: rgba(0, 255, 204, 0.1) !important;
+            border: 1px solid var(--neon-cyan) !important;
+            color: var(--neon-cyan) !important;
+            border-radius: 15px !important;
+            padding: 12px 30px !important;
+            font-weight: 700 !important;
+            transition: 0.3s !important;
+        }
+        .swal2-confirm.swal2-styled:hover {
+            background: var(--neon-cyan) !important;
+            color: #000 !important;
+            box-shadow: 0 0 20px var(--neon-cyan) !important;
+        }
+        .swal2-cancel.swal2-styled {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 15px !important;
+            color: #ccc !important;
+        }
+        .swal2-input {
+            background: rgba(0,0,0,0.3) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: white !important;
+            border-radius: 12px !important;
+            font-size: 14px !important;
+        }
+        .swal2-icon.swal2-error { border-color: var(--neon-pink) !important; color: var(--neon-pink) !important; }
+        .swal2-icon.swal2-error [class^='swal2-x-mark-line'] { background-color: var(--neon-pink) !important; }
+        .swal2-icon.swal2-success { border-color: var(--neon-cyan) !important; }
+        .swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: var(--neon-cyan) !important; }
+        .swal2-icon.swal2-success .swal2-success-ring { border: 4px solid rgba(0, 255, 204, 0.2) !important; }
+
         .modal-title {
             font-size: 24px;
             color: var(--neon-cyan);
@@ -374,40 +461,43 @@
             </div>
         </div>
         
-        <div class="nav-item active" onclick="switchTab('dashboard')">
+        <div class="nav-item active" data-module="dashboard" onclick="checkPermission('dashboard', () => switchTab('dashboard'))">
             <i class="fa-solid fa-border-all"></i> {{ __('Dashboard') }}
         </div>
-        <div class="nav-item" onclick="switchTab('finance')">
+        <div class="nav-item" data-module="finance" onclick="checkPermission('finance', () => switchTab('finance'))">
             <i class="fa-solid fa-file-invoice-dollar"></i> {{ __('Pricing') }}
         </div>
-        <div class="nav-item" onclick="switchTab('tenants')">
+        <div class="nav-item" data-module="tenants" onclick="checkPermission('tenants', () => switchTab('tenants'))">
             <i class="fa-solid fa-users"></i> {{ __('Clients') }}
         </div>
-        <div class="nav-item" onclick="switchTab('employees')">
+        <div class="nav-item" data-module="employees" onclick="checkPermission('employees', () => switchTab('employees'))">
             <i class="fa-solid fa-user-shield"></i> {{ __('Employees') }}
         </div>
-        <div class="nav-item" onclick="switchTab('settings')">
+        <div class="nav-item" data-module="settings" onclick="checkPermission('settings', () => switchTab('settings'))">
             <i class="fa-solid fa-gears"></i> {{ __('Settings') }}
         </div>
-        <div class="nav-item" onclick="switchTab('ai-hub')">
+        <div class="nav-item" data-module="ai_hub" onclick="checkPermission('ai_hub', () => switchTab('ai_hub'))">
             <i class="fa-solid fa-brain"></i> {{ __('AI Agents') }}
         </div>
-        <div class="nav-item" onclick="switchTab('system-health')">
+        <div class="nav-item" data-module="academy" onclick="checkPermission('academy', () => switchTab('academy'))">
+            <i class="fa-solid fa-graduation-cap"></i> {{ __('Academy') }}
+        </div>
+        <div class="nav-item" data-module="system_health" onclick="checkPermission('system_health', () => switchTab('system_health'))">
             <i class="fa-solid fa-server"></i> {{ __('Server Health') }}
         </div>
-        <div class="nav-item" onclick="switchTab('security-logs')">
+        <div class="nav-item" data-module="security_logs" onclick="checkPermission('security_logs', () => switchTab('security_logs'))">
             <i class="fa-solid fa-shield-halved"></i> {{ __('Security Logs') }}
         </div>
-        <div class="nav-item" onclick="switchTab('templates')">
+        <div class="nav-item" data-module="templates" onclick="checkPermission('templates', () => switchTab('templates'))">
             <i class="fa-solid fa-layer-group"></i> {{ __('Templates') }}
         </div>
-        <div class="nav-item" onclick="switchTab('ai-developer')">
+        <div class="nav-item" data-module="ai_developer" onclick="checkPermission('ai_developer', () => switchTab('ai_developer'))">
             <i class="fa-solid fa-code"></i> {{ __('Developer Portal') }}
         </div>
-        <div class="nav-item" onclick="switchTab('bot-manager')">
+        <div class="nav-item" data-module="bot_manager" onclick="checkPermission('bot_manager', () => switchTab('bot_manager'))">
             <i class="fa-solid fa-tower-cell"></i> {{ __('Bot Manager') }}
         </div>
-        <div class="nav-item" onclick="switchTab('live-chat')">
+        <div class="nav-item" data-module="live_chat" onclick="checkPermission('live_chat', () => switchTab('live_chat'))">
             <i class="fa-solid fa-headset"></i> {{ __('Human Handoff') }}
         </div>
         
@@ -652,16 +742,23 @@
                             <input type="text" id="emp_passport" placeholder="AA1234567" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
                         </div>
                         <div>
-                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Roli</label>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Xodim Roli</label>
                             <select id="emp_role" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
-                                <option value="admin">Admin</option>
-                                <option value="master">Master Admin (Root)</option>
                                 <option value="operator">Operator / Sotuvchi</option>
+                                <option value="admin">Admin</option>
+                                <option value="master">Master Admin</option>
+                                <option value="developer">Dasturchi</option>
                             </select>
                         </div>
                         <div>
-                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Yuz qiyofasi (Face ID Base64 yoki Rasm)</label>
+                            <label style="display:block; margin-bottom:5px; color: var(--text-muted);">Face ID (Rasm yuklang)</label>
                             <input type="file" id="emp_face_photo" accept="image/*" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white;">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:10px; color: var(--neon-cyan); font-weight: bold;">Ruxsatlar boshqaruvi</label>
+                            <button type="button" class="btn-ios btn-neon" onclick="document.getElementById('permissionsModal').classList.add('active')" style="width: 100%; height: 50px; border-radius: 12px; font-size: 14px;">
+                                <i class="fa-solid fa-shield-halved"></i> Ruxsatlarni belgilash (<span id="selectedPermsCount">12</span> ta)
+                            </button>
                         </div>
                     </div>
                     <div style="margin-top: 20px; display:flex; gap: 10px;">
@@ -669,6 +766,26 @@
                         <button type="button" class="btn-ios" onclick="closeEmpForm()">{{ __('Cancel') }}</button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Mini Glass Modal for Permissions -->
+            <div id="permissionsModal" class="modal-overlay" onclick="if(event.target === this) this.classList.remove('active')">
+                <div class="glass-modal">
+                    <div class="modal-title"><i class="fa-solid fa-lock-open"></i> Bo'lim ruxsatlari</div>
+                    <div class="perm-grid" id="permGridList">
+                        @php $modules = ['dashboard', 'finance', 'tenants', 'employees', 'settings', 'ai_hub', 'system_health', 'security_logs', 'templates', 'ai_developer', 'bot_manager', 'live_chat']; @endphp
+                        @foreach($modules as $mod)
+                        <label class="perm-item">
+                            <span>{{ ucwords(str_replace('_', ' ', $mod)) }}</span>
+                            <div class="ios-toggle-container">
+                                <input type="checkbox" name="permissions[]" value="{{ $mod }}" class="emp-permission-cb" checked style="display:none;" id="cb_{{ $mod }}" onchange="updatePermCount()">
+                                <div class="ios-toggle on" onclick="togglePerm('{{ $mod }}', this)"></div>
+                            </div>
+                        </label>
+                        @endforeach
+                    </div>
+                    <button type="button" class="btn-ios btn-neon" onclick="document.getElementById('permissionsModal').classList.remove('active')" style="width: 100%;">Saqlash</button>
+                </div>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
@@ -1076,6 +1193,59 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+        </div>
+    <div id="academy" class="view-section">
+        <h2 style="margin-bottom: 25px;"><i class="fa-solid fa-graduation-cap" style="color: var(--neon-purple);"></i> ITcloud Academy <span style="font-size: 14px; opacity: 0.5;">Management Panel</span></h2>
+        
+        <div class="stats-grid" style="margin-bottom: 30px;">
+            <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-purple);">
+                <div class="stat-title">Jami O'quvchilar</div>
+                <div class="stat-value" id="acad-stats-total">0</div>
+            </div>
+            <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-cyan);">
+                <div class="stat-title">Yangi Arizalar</div>
+                <div class="stat-value" id="acad-stats-pending">0</div>
+            </div>
+            <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-pink);">
+                <div class="stat-title">Bounty Vazifalar</div>
+                <div class="stat-value" id="acad-stats-tasks">0</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+            <button class="btn-ios active" onclick="switchAcademyTab(this, 'acad-apps')"><i class="fa-solid fa-id-card"></i> Arizalar</button>
+            <button class="btn-ios" onclick="switchAcademyTab(this, 'acad-students')"><i class="fa-solid fa-users"></i> O'quvchilar</button>
+            <button class="btn-ios" onclick="switchAcademyTab(this, 'acad-bounty')"><i class="fa-solid fa-award"></i> Bounty & Vazifalar</button>
+        </div>
+
+        <div id="acad-apps" class="academy-tab-content" style="display: block;">
+            <div class="glass-panel" style="padding: 25px;">
+                <h3><i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Tahlili kutilayotgan arizalar</h3>
+                <div style="margin-top: 20px;">
+                    <div id="academy-apps-list">
+                        <div style="text-align: center; padding: 40px; opacity: 0.5;">Yuklanmoqda...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="acad-students" class="academy-tab-content" style="display: none;">
+            <div class="glass-panel" style="padding: 25px;">
+                <h3><i class="fa-solid fa-user-graduate" style="color: var(--neon-purple);"></i> Faol O'quvchilar</h3>
+                <div id="academy-students-list" style="margin-top: 20px;">
+                    <p style="opacity: 0.5; text-align: center;">Hali faol o'quvchilar yo'q.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="acad-bounty" class="academy-tab-content" style="display: none;">
+            <div class="glass-panel" style="padding: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3><i class="fa-solid fa-sack-dollar" style="color: var(--neon-pink);"></i> Bonus Vazifalar</h3>
+                    <button class="btn-ios btn-neon"><i class="fa-solid fa-plus"></i> Yangi Vazifa</button>
+                </div>
+                <!-- Bounty content -->
             </div>
         </div>
     </div>
@@ -2230,10 +2400,35 @@
             document.getElementById('emp_email').value = emp.email;
             document.getElementById('emp_passport').value = emp.passport_number || '';
             document.getElementById('emp_role').value = emp.role;
+            
+            // Sync permissions UI
+            const userPerms = emp.permissions || [];
+            document.querySelectorAll('.emp-permission-cb').forEach(cb => {
+                const isSelected = userPerms.includes(cb.value);
+                cb.checked = isSelected;
+                const toggle = cb.nextElementSibling;
+                if(isSelected) toggle.classList.add('on');
+                else toggle.classList.remove('on');
+            });
+            updatePermCount();
+
             document.getElementById('emp_password').required = false;
             document.getElementById('empModalHeader').innerText = "Xodim Ma'lumotlarini Tahrirlash";
             document.getElementById('add-emp-form').style.display = 'block';
             document.getElementById('add-emp-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function togglePerm(mod, el) {
+            const cb = document.getElementById('cb_' + mod);
+            cb.checked = !cb.checked;
+            if(cb.checked) el.classList.add('on');
+            else el.classList.remove('on');
+            updatePermCount();
+        }
+
+        function updatePermCount() {
+            const count = document.querySelectorAll('.emp-permission-cb:checked').length;
+            document.getElementById('selectedPermsCount').innerText = count;
         }
 
         function closeEmpForm() {
@@ -2250,6 +2445,11 @@
             fd.append('email', document.getElementById('emp_email').value);
             fd.append('role', document.getElementById('emp_role').value);
             fd.append('passport_number', document.getElementById('emp_passport').value);
+            
+            // Add Permissions manually
+            document.querySelectorAll('.emp-permission-cb:checked').forEach(cb => {
+                fd.append('permissions[]', cb.value);
+            });
             
             let pass = document.getElementById('emp_password').value;
             if(pass) fd.append('password', pass);
@@ -2463,12 +2663,17 @@
                 document.getElementById('stats-total-revenue').innerText = new Intl.NumberFormat('uz-UZ').format(data.stats.total_revenue) + " UZS";
                 document.getElementById('stats-active-tenants').innerText = data.stats.active_tenants;
                 document.getElementById('stats-new-leads').innerText = data.stats.new_leads_today;
-                document.getElementById('stats-total-bots').innerText = data.stats.total_bots;
-
-                // Render Chart
-                const ctx = document.getElementById('dashboardChart').getContext('2d');
                 
-                // Helper to map monthly totals
+                // Chart logic remains same...
+                renderMainChart(data);
+
+                // Load sub-sections if they are empty
+                loadDashboardSections();
+            } catch (e) { console.error("Analytics Error:", e); }
+        }
+
+        function renderMainChart(data) {
+                const ctx = document.getElementById('dashboardChart').getContext('2d');
                 const mapMonthly = (dbData) => {
                     const months = ["01","02","03","04","05","06","07","08","09","10","11","12"];
                     const currentMonths = [];
@@ -2482,7 +2687,6 @@
                         return find ? find.total : 0;
                     });
                 }
-
                 const revenueValues = mapMonthly(data.revenue);
                 const leadsValues = mapMonthly(data.leads);
 
@@ -2491,32 +2695,14 @@
                     data: {
                         labels: data.months,
                         datasets: [
-                            {
-                                label: 'Daromad (UZS)',
-                                data: revenueValues,
-                                borderColor: '#00ffcc',
-                                backgroundColor: 'rgba(0, 255, 204, 0.1)',
-                                fill: true,
-                                tension: 0.4,
-                                yAxisID: 'y'
-                            },
-                            {
-                                label: 'Yangi Leadlar',
-                                data: leadsValues,
-                                borderColor: '#b026ff',
-                                backgroundColor: 'rgba(176, 38, 255, 0.1)',
-                                fill: true,
-                                tension: 0.4,
-                                yAxisID: 'y1'
-                            }
+                            { label: 'Daromad (UZS)', data: revenueValues, borderColor: '#00ffcc', backgroundColor: 'rgba(0, 255, 204, 0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
+                            { label: 'Yangi Leadlar', data: leadsValues, borderColor: '#b026ff', backgroundColor: 'rgba(176, 38, 255, 0.1)', fill: true, tension: 0.4, yAxisID: 'y1' }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: true, labels: { color: 'white' } }
-                        },
+                        plugins: { legend: { display: true, labels: { color: 'white' } } },
                         scales: {
                             x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
                             y: { position: 'left', grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#00ffcc' } },
@@ -2524,7 +2710,12 @@
                         }
                     }
                 });
-            } catch (e) { console.error("Analytics Error:", e); }
+        }
+
+        async function loadDashboardSections() {
+            // This ensures sections are populated via API if they look empty after Blade render
+            updateActiveChats();
+            initAcademyDashboard();
         }
 
         // Settings Update Logic
@@ -2661,12 +2852,189 @@
             initDashboardAnalytics();
         }
 
-        // Tasodifiy ravishda AI xabar berib turishi (Realistik effekt uchun)
-        setInterval(() => {
-            if(Math.random() > 0.7 && !document.getElementById('dynamicIsland').classList.contains('active')) {
-                simulateAIAction();
+        // Role & Permission Logic
+        const CURRENT_USER_PERMISSIONS = @json(auth()->user()->permissions ?? []);
+        const IS_MASTER = "{{ auth()->user()->role === 'master' }}";
+
+        function checkPermission(module, callback) {
+            const userPermissions = @json(auth()->user()->permissions ?? []);
+            const userRole = "{{ auth()->user()->role }}";
+
+            if (userRole === 'master' || userPermissions.includes(module)) {
+                callback();
+            } else {
+                Swal.fire({
+                    title: 'Kirish Bloklangan',
+                    text: 'Sizda ushbu boʻlimga ruxsat yoʻq. Davom etish uchun Master Login kiritasizmi?',
+                    icon: 'lock',
+                    background: '#0a0a1a',
+                    color: '#fff',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login kiritish',
+                    cancelButtonText: 'Bekor qilish',
+                    confirmButtonColor: 'var(--neon-cyan)',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        promptMasterEscalation(module, callback);
+                    }
+                });
             }
-        }, 15000);
+        }
+
+        async function promptMasterEscalation(module, callback) {
+            const { value: formValues } = await Swal.fire({
+                title: 'Master Tasdiqlash',
+                html:
+                    '<input id="swal-input1" class="swal2-input" placeholder="Email/Login" style="background:#1a1a1a; color:white; border-color:var(--glass-border)">' +
+                    '<input id="swal-input2" type="password" class="swal2-input" placeholder="Parol" style="background:#1a1a1a; color:white; border-color:var(--glass-border)">',
+                focusConfirm: false,
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-input1').value,
+                        document.getElementById('swal-input2').value
+                    ]
+                }
+            });
+
+            if (formValues) {
+                // In a real app, this would be an AJAX call to verify credentials
+                // For now, simulate with a simple check or feedback
+                Swal.fire({ title: 'Tekshirilmoqda...', didOpen: () => Swal.showLoading() });
+                
+                try {
+                    const res = await fetch(`${API_PREFIX}/auth/verify-master`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                        body: JSON.stringify({ email: formValues[0], password: formValues[1], module: module })
+                    });
+                    const d = await res.json();
+                    if(d.status === 'success') {
+                        Swal.fire('Muvaffaqiyatli!', 'Ruxsat berildi.', 'success');
+                        callback();
+                    } else {
+                        Swal.fire('Xato', 'Ruxsat berilmadi yoki ma\'lumotlar xato.', 'error');
+                    }
+                } catch(e) { Swal.fire('Xato', 'Server ulanish xatosi', 'error'); }
+            }
+        }
+
+        function switchAcademyTab(btn, tabId) {
+            document.querySelectorAll('.academy-tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('#academy .btn-ios').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            btn.classList.add('active');
+        }
+
+        async function initAcademyDashboard() {
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/stats`);
+                const data = await res.json();
+                document.getElementById('acad-stats-total').innerText = data.total_students;
+                document.getElementById('acad-stats-pending').innerText = data.pending_apps;
+                document.getElementById('acad-stats-tasks').innerText = data.active_tasks;
+                
+                loadAcademyApplications();
+            } catch(e) { console.error("Academy Dashboard Error", e); }
+        }
+
+        async function loadAcademyApplications() {
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/applications`);
+                const apps = await res.json();
+                const container = document.getElementById('academy-apps-list');
+                
+                if (apps.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; opacity: 0.5;">Hozircha arizalar yo\'q.</div>';
+                    return;
+                }
+
+                container.innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+                    ${apps.map(app => `
+                        <div class="glass-panel" style="padding: 20px; border-top: 3px solid ${app.status === 'accepted' ? 'var(--neon-cyan)' : 'var(--neon-purple)'};">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span class="status-badge" style="background: ${app.status === 'pending' ? 'rgba(176,38,255,0.1)' : 'rgba(0,255,204,0.1)'}; color: ${app.status === 'pending' ? 'var(--neon-purple)' : 'var(--neon-cyan)'}; border-color: currentcolor;">${app.status.toUpperCase()}</span>
+                                <small style="opacity: 0.5;">${new Date(app.created_at).toLocaleDateString()}</small>
+                            </div>
+                            <h4 style="margin: 0 0 5px 0;">${app.name}</h4>
+                            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 5px;"><i class="fa-solid fa-phone"></i> ${app.phone}</div>
+                            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 15px;"><i class="fa-solid fa-code"></i> ${app.direction} (${app.level})</div>
+                            
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; font-size: 11px; margin-bottom: 20px;">
+                                <i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Tahlili: 
+                                <p style="margin-top: 5px; opacity: 0.8; line-height: 1.4;">${app.ai_assessment ? JSON.parse(app.ai_assessment).assessment : 'Tahlil qilinmoqda...'}</p>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                ${app.status === 'pending' || app.status === 'test_sent' ? `<button onclick="approveApplication(${app.id})" class="btn-ios btn-neon" style="flex: 2; font-size: 11px;">Qabul qilish</button>` : ''}
+                                <button onclick="deleteApplication(${app.id})" class="btn-ios" style="flex: 1; color: var(--neon-pink); font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>`;
+            } catch(e) { console.error("Load Apps Error", e); }
+        }
+
+        async function approveApplication(id) {
+            const res = await Swal.fire({
+                title: "O'quvchini qabul qilish?",
+                text: "Ushbu shaxsga 'student' roli beriladi va o'quvchi paneliga kirish huquqi beriladi.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--neon-cyan)',
+                confirmButtonText: 'Ha, qabul qilinsin!',
+                background: '#0a0a1a',
+                color: '#fff'
+            });
+
+            if (res.isConfirmed) {
+                Swal.fire({ title: 'Jarayonda...', didOpen: () => Swal.showLoading() });
+                try {
+                    const response = await fetch(`${API_PREFIX}/academy/applications/${id}/approve`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        Swal.fire('Tabriklaymiz!', data.message, 'success').then(() => initAcademyDashboard());
+                    }
+                } catch(e) { Swal.fire('Xato', 'Server xatosi', 'error'); }
+            }
+        }
+
+        async function deleteApplication(id) {
+            const res = await Swal.fire({
+                title: "Arizani o'chirish?",
+                text: "Ushbu amalni ortga qaytarib bo'lmaydi!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--neon-pink)',
+                confirmButtonText: "Ha, o'chirilsin!",
+                background: '#0a0a1a',
+                color: '#fff'
+            });
+
+            if (res.isConfirmed) {
+                try {
+                    const response = await fetch(`${API_PREFIX}/academy/applications/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        Swal.fire('O\'chirildi', data.message, 'success').then(() => initAcademyDashboard());
+                    }
+                } catch(e) { Swal.fire('Xato', 'Server xatosi', 'error'); }
+            }
+        }
+
+        // Add to window.onload if academy panel is active
+        const originalOnload = window.onload;
+        window.onload = function() {
+            if(originalOnload) originalOnload();
+            initAcademyDashboard();
+        }
     </script>
 </body>
 </html>

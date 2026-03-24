@@ -18,7 +18,8 @@ class EmployeeController extends Controller
             'password' => 'required|min:6',
             'role' => 'required',
             'passport_number' => 'nullable',
-            'is_face_id_enabled' => 'boolean'
+            'is_face_id_enabled' => 'boolean',
+            'permissions' => 'nullable|array'
         ]);
 
         $data['password'] = Hash::make($data['password']);
@@ -42,7 +43,8 @@ class EmployeeController extends Controller
             'email' => 'required|email|unique:users,email,'.$id,
             'role' => 'required',
             'passport_number' => 'nullable',
-            'password' => 'nullable|min:6'
+            'password' => 'nullable|min:6',
+            'permissions' => 'nullable|array'
         ]);
 
         if (!empty($data['password'])) {
@@ -80,5 +82,29 @@ class EmployeeController extends Controller
         $employee->delete();
 
         return response()->json(['status' => 'success']);
+    }
+    public function verifyMaster(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'module' => 'required'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user && Hash::check($request->password, $user->password) && $user->role === 'master') {
+            // Log this situational escalation
+            \App\Models\SecurityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Permission Escalation',
+                'details' => "Master access granted for module: {$request->module} by {$user->name}",
+                'ip_address' => $request->ip()
+            ]);
+
+            return response()->json(['status' => 'success']);
+        }
+
+        return response()->json(['status' => 'error'], 401);
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AiProjectController;
 use App\Http\Controllers\Api\TemplateController;
 use App\Http\Controllers\Api\TelegramBotController;
 use App\Http\Controllers\Api\AiChatController;
+use App\Http\Controllers\Api\AcademyController;
 use App\Models\PriceService;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -61,6 +62,7 @@ Route::patch('/leads/{id}/status', function(Request $request, $id) {
 
 // Employees
 Route::apiResource('employees', EmployeeController::class)->except(['index', 'show']);
+Route::post('/auth/verify-master', [EmployeeController::class, 'verifyMaster']);
 
 // Projects
 Route::apiResource('ai-projects', AiProjectController::class)->only(['index', 'store']);
@@ -77,17 +79,35 @@ Route::post('/bots/{id}/knowledge', function ($id) { return response()->json(['s
 
 // Chat & Monitor
 Route::post('/ai/chat', [AiChatController::class, 'chat']);
-Route::get('/ai/active-chats', function() { return response()->json([]); });
-Route::get('/ai/conversation/{id}', function() { return response()->json([]); });
+Route::get('/ai/active-chats', [AiChatController::class, 'getActiveChats']);
+Route::get('/ai/conversation/{id}', [AiChatController::class, 'getConversation']);
 
 Route::prefix('client')->group(function () {
     Route::middleware('auth:sanctum')->get('/verify/status', [TelegramVerificationController::class, 'checkStatus']);
     Route::middleware('web', 'auth')->get('/verify/status', [TelegramVerificationController::class, 'checkStatus']);
     Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+    Route::post('/academy/webhook', function(Request $request) {
+        return app(TelegramWebhookController::class)->handle($request, 'academy');
+    });
 });
 
 // PR auto-bot manual trigger
 Route::post('/pr-bot/trigger', function () {
     \Illuminate\Support\Facades\Artisan::call('app:send-daily-project-update', ['--force' => true]);
     return response()->json(['status' => 'success']);
+});
+
+// Academy API
+Route::get('/academy/stats', [AcademyController::class, 'getStats']);
+Route::post('/academy/apply', [AcademyController::class, 'apply']);
+Route::get('/academy/applications', [AcademyController::class, 'getApplications']);
+Route::put('/academy/applications/{id}', [AcademyController::class, 'updateApplication']);
+Route::delete('/academy/applications/{id}', [AcademyController::class, 'deleteApplication']);
+Route::post('/academy/applications/{id}/approve', [AcademyController::class, 'approveApplication']);
+
+Route::middleware('auth:sanctum')->group(function() {
+    Route::get('/academy/dashboard', [AcademyController::class, 'getStudentDashboard']);
+    Route::post('/academy/lesson', [AcademyController::class, 'generateLesson']);
+    Route::post('/academy/sandbox', [AcademyController::class, 'submitSandbox']);
+    Route::post('/academy/task/submit', [AcademyController::class, 'submitTask']);
 });
