@@ -22,7 +22,7 @@ class AntigravityCodeService
         $prompt .= "Architecture: Laravel 11 + Blade (Cyber-Glass UI style).\n";
         $prompt .= "Database Schema: {$tables}.\n";
         $prompt .= "Included Modules: {$feats}.\n";
-        $prompt .= "Constraint: Faqat real va xatosiz PHP/HTML kodlarini fayl nomlari bilan (Header: File: path/name.php) bloklarda generatsiya qil. Hech qanday tushuntirish kerakmas, faqat kod!";
+        $prompt .= "Constraint: Barcha fayllarni quyidagi formatda berishi shart: <file path=\"fayl/yo'li/nomi.php\">Kod bu yerda</file>. Hech qanday tushuntirish berma, faqat fayl teglarini generatsiya qil!";
         
         return $prompt;
     }

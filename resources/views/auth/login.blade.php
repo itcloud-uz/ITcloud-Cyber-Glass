@@ -52,8 +52,17 @@
             transition: all 0.4s ease;
         }
 
-        .brand { font-size: 32px; font-weight: 800; margin-bottom: 40px; letter-spacing: 1px; }
-        .brand span { color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0,255,204,0.5); }
+        .brand { margin-bottom: 30px; text-align: center; }
+        .logo-animated {
+            width: 120px;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(0, 255, 204, 0.4));
+            animation: logoFloat 5s ease-in-out infinite;
+        }
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0) rotate(-1deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+        }
 
         .input-group { margin-bottom: 25px; text-align: left; }
         .input-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-left: 10px; }
@@ -120,7 +129,17 @@
     <div class="ambient-blob blob-2"></div>
 
     <div class="glass-panel" id="login-panel">
-        <div class="brand">IT<span>cloud</span> Master</div>
+        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px;">
+            <a href="{{ route('lang.switch', 'uz') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'uz' ? '1' : '0.4' }};">🇺🇿</a>
+            <a href="{{ route('lang.switch', 'tr') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'tr' ? '1' : '0.4' }};">🇹🇷</a>
+            <a href="{{ route('lang.switch', 'ru') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'ru' ? '1' : '0.4' }};">🇷🇺</a>
+            <a href="{{ route('lang.switch', 'en') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'en' ? '1' : '0.4' }};">🇺🇸</a>
+        </div>
+        <div class="brand">
+            <div class="logo-animated" style="display: inline-block; font-size: 32px; font-weight: 800; letter-spacing: 1px;">
+                IT<span style="color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0,255,204,0.5);">cloud</span> <span style="font-size: 14px; color: var(--text-muted); font-weight: 400;">Master</span>
+            </div>
+        </div>
         
         <div id="error-alert" class="error-msg"></div>
 
@@ -131,12 +150,12 @@
             </div>
             
             <div class="input-group">
-                <label>Maxfiy Parol</label>
+                <label>{{ __('Secret Password') }}</label>
                 <input type="password" id="password" class="input-field" placeholder="••••••••" value="clone1997" />
             </div>
 
             <button class="btn-neon" onclick="submitPassword()" id="btn-login">
-                <i class="fa-solid fa-arrow-right-to-bracket"></i> Tizimga Kirish
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> {{ __('Login to System') }}
             </button>
         </div>
 
@@ -146,19 +165,19 @@
                 <div class="scan-line"></div>
             </div>
             
-            <div class="liveness-text" id="liveness-msg">Kameryaga qarang va ko'zni pirpirating...</div>
+            <div class="liveness-text" id="liveness-msg">{{ __('Look at the camera and blink...') }}</div>
             
             <button class="btn-neon btn-telegram" onclick="requestTelegramOTP()" id="btn-otp">
-                <i class="fa-brands fa-telegram"></i> Face ID o'rniga kod yuborish
+                <i class="fa-brands fa-telegram"></i> {{ __('Send code instead of Face ID') }}
             </button>
         </div>
 
         <div id="step-3-otp" style="display: none;">
             <div class="input-group">
-                <label>Telegram Kod (6 xonali)</label>
+                <label>{{ __('Telegram Code (6 digits)') }}</label>
                 <input type="text" id="otp-code" class="input-field" placeholder="123456" />
             </div>
-            <button class="btn-neon" onclick="verifyOTP()">Kodni Tasdiqlash</button>
+            <button class="btn-neon" onclick="verifyOTP()">{{ __('Confirm Code') }}</button>
         </div>
 
     </div>
@@ -210,18 +229,25 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
                 
-                // REAL: Python serverga kadr yuborish
-                document.getElementById('liveness-msg').innerHTML = "Yuz tahlil qilinmoqda...";
-                
-                // Canvas orqali kadrni olish
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const imageData = canvas.toDataURL('image/jpeg');
+                // Kadr tayyor bo'lishini kutamiz (Metadata yuklangach)
+                video.onloadedmetadata = () => {
+                    video.play();
+                    document.getElementById('liveness-msg').innerHTML = "Yuz tahlil qilinmoqda...";
+                    
+                    // Kichik delay (Kamera uyg'onishi uchun)
+                    setTimeout(() => {
+                        // Canvas orqali kadrni olish (Tezlik uchun kichraytiramiz)
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 400; // Standart o'lcham
+                        canvas.height = 300;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, 400, 300);
+                        const imageData = canvas.toDataURL('image/jpeg', 0.7); // Sifatni biroz pasaytiramiz (70%)
 
-                // Backend orqali Python API ga yuborish
-                sendFaceIDImage(imageData);
+                        // Backend orqali Python API ga yuborish
+                        sendFaceIDImage(imageData);
+                    }, 300);
+                };
 
             } catch (err) {
                 showError("Kamerani yoqish imkoni bo'lmadi! Iltimos, Telegram orqali kiring.");
@@ -229,6 +255,7 @@
             }
         }
 
+        let faceRetryCount = 0;
         async function sendFaceIDImage(image) {
             try {
                 const res = await fetch('/login/face-id', {
@@ -238,12 +265,22 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    document.getElementById('liveness-msg').innerHTML = "<i class='fa-solid fa-check'></i> Muvaffaqiyatli! Kirilmoqda...";
+                    document.getElementById('liveness-msg').innerHTML = "<i class='fa-solid fa-check'></i> {{ __('Success') }}! {{ __('Logging in') }}...";
                     setTimeout(() => window.location.href = data.redirect, 1000);
                 } else {
-                    showError(data.message);
+                    if (faceRetryCount < 3) {
+                        faceRetryCount++;
+                        document.getElementById('liveness-msg').innerHTML = `<i class='fa-solid fa-rotate'></i> {{ __('Retry') }} (${faceRetryCount}/3)...`;
+                        setTimeout(() => startCamera(), 2000);
+                    } else {
+                        showError("Yuz tanilmadi. Iltimos, Telegram orqali kiring.");
+                        document.getElementById('liveness-msg').innerHTML = "Tahlil to'xtatildi.";
+                        document.getElementById('btn-otp').style.boxShadow = "0 0 20px var(--neon-cyan)";
+                    }
                 }
-            } catch (err) { showError('FaceID serveri bilan bog\'lanishda xato'); }
+            } catch (err) { 
+                showError('FaceID serveri bilan bog\'lanishda xato'); 
+            }
         }
 
         async function requestTelegramOTP() {

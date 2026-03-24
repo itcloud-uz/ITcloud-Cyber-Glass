@@ -23,7 +23,6 @@ class EmployeeController extends Controller
 
         $data['password'] = Hash::make($data['password']);
 
-        // Agar fayl kelgan bo'lsa
         if ($request->hasFile('face_id_photo')) {
             $path = $request->file('face_id_photo')->store('face_ids', 'public');
             $data['face_id_photo_path'] = $path;
@@ -32,5 +31,54 @@ class EmployeeController extends Controller
         $employee = User::create($data);
 
         return response()->json(['status' => 'success', 'employee' => $employee]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $employee = User::findOrFail($id);
+        
+        $data = $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users,email,'.$id,
+            'role' => 'required',
+            'passport_number' => 'nullable',
+            'password' => 'nullable|min:6'
+        ]);
+
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
+        if ($request->hasFile('face_id_photo')) {
+            if ($employee->face_id_photo_path) {
+                Storage::disk('public')->delete($employee->face_id_photo_path);
+            }
+            $path = $request->file('face_id_photo')->store('face_ids', 'public');
+            $data['face_id_photo_path'] = $path;
+        }
+
+        $employee->update($data);
+
+        return response()->json(['status' => 'success', 'employee' => $employee]);
+    }
+
+    public function destroy($id)
+    {
+        $employee = User::findOrFail($id);
+        
+        // Don't delete self
+        if (auth()->id() == $id) {
+            return response()->json(['status' => 'error', 'message' => 'O\'zingizni o\'chira olmaysiz'], 403);
+        }
+
+        if ($employee->face_id_photo_path) {
+            Storage::disk('public')->delete($employee->face_id_photo_path);
+        }
+
+        $employee->delete();
+
+        return response()->json(['status' => 'success']);
     }
 }

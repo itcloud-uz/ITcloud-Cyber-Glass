@@ -46,11 +46,19 @@ class AuthController extends Controller
         try {
             $apiKey = env('FACEID_API_KEY', 'itcloud_secret_faceid_2026');
             
+            // Fetch original photo from storage
+            $originalPath = storage_path('app/public/' . $user->face_id_photo_path);
+            $originalImageBase64 = '';
+            if (file_exists($originalPath)) {
+                $originalImageBase64 = base64_encode(file_get_contents($originalPath));
+            }
+
             $response = \Illuminate\Support\Facades\Http::withHeaders([
                 'X-API-KEY' => $apiKey,
                 'Accept' => 'application/json'
             ])->post('http://127.0.0.1:8001/api/v1/verify-face', [
-                'image' => $image,
+                'live_image' => $image,
+                'original_image' => $originalImageBase64,
                 'user_id' => $user->id
             ]);
 
@@ -58,7 +66,7 @@ class AuthController extends Controller
                 $data = $response->json();
                 if (($data['status'] ?? '') === 'success') {
                     $request->session()->put('face_id_verified', true);
-                    return response()->json(['status' => 'success', 'redirect' => '/']);
+                    return response()->json(['status' => 'success', 'redirect' => '/master']);
                 }
             }
             
@@ -75,13 +83,23 @@ class AuthController extends Controller
     
     public function sendTelegramOtp(Request $request)
     {
-        // This is only allowed if user is already authenticated via password (Session exists)
         if (Auth::check()) {
             $otp = rand(100000, 999999);
             $request->session()->put('telegram_otp', $otp);
             
-            // Mocking Telegram Send Message logic
-            Log::info("TELEGRAM OTP: $otp sent to Master Admin.");
+            $token = env('TELEGRAM_BOT_TOKEN');
+            $chatId = env('TELEGRAM_MASTER_CHAT_ID');
+            
+            if ($token && $chatId) {
+                $message = "🔐 ITcloud Master Autentifikatsiya: \n\nSizning login kodingiz: *$otp*\n\nUshbu kodni hech kimga bermang!";
+                \Illuminate\Support\Facades\Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => $chatId,
+                    'text' => $message,
+                    'parse_mode' => 'Markdown'
+                ]);
+            }
+
+            Log::info("TELEGRAM OTP: $otp sent to Master Admin via Bot.");
             
             return response()->json(['status' => 'success', 'message' => 'Telegramga 6 xonali kod yuborildi.']);
         }
@@ -92,7 +110,7 @@ class AuthController extends Controller
     {
         if (Auth::check() && $request->input('otp') == $request->session()->get('telegram_otp')) {
             $request->session()->put('face_id_verified', true);
-            return response()->json(['status' => 'success', 'redirect' => '/']);
+            return response()->json(['status' => 'success', 'redirect' => '/master']);
         }
         return response()->json(['status' => 'error', 'message' => 'Kod xato'], 401);
     }

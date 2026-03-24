@@ -27,6 +27,9 @@ class AdminController extends Controller
         $telegramBots = \App\Models\TelegramBot::all();
         $leads = \App\Models\Lead::latest()->get();
         $subscriptions = Subscription::with('tenant')->latest()->take(20)->get();
+        $settings = \App\Models\Setting::all()->pluck('value', 'key');
+        $priceServices = \App\Models\PriceService::all();
+        $employees = \App\Models\User::all();
 
         return view('welcome', compact(
             'activeTenantsCount',
@@ -39,7 +42,10 @@ class AdminController extends Controller
             'securityLogs',
             'telegramBots',
             'leads',
-            'subscriptions'
+            'subscriptions',
+            'settings',
+            'priceServices',
+            'employees'
         ));
     }
 }

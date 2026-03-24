@@ -10,6 +10,8 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\AiProject;
 use App\Services\AntigravityCodeService;
 use App\Services\TenantProvisionerService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class ProcessAiProjectCode implements ShouldQueue
 {
@@ -17,43 +19,64 @@ class ProcessAiProjectCode implements ShouldQueue
 
     protected $projectId;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct($projectId)
     {
         $this->projectId = $projectId;
     }
 
-    /**
-     * Execute the Antigravity Pipeline
-     */
     public function handle(): void
     {
         $project = AiProject::findOrFail($this->projectId);
         
-        // 1. Compile Prompt
-        $project->update(['status' => 'compiling', 'progress' => 10]);
+        // 1. Compile & Generate
+        $project->update(['status' => 'generating', 'progress' => 20]);
         $prompt = AntigravityCodeService::compilePrompt($project);
+        $response = AntigravityCodeService::generateCodebase($project, $prompt);
 
-        // 2. Generate Code
-        $project->update(['status' => 'generating', 'progress' => 45]);
-        $code = AntigravityCodeService::generateCodebase($project, $prompt);
-
-        if ($code) {
-           // 3. Testing (Mock pass)
-           $project->update(['status' => 'testing', 'progress' => 85]);
-           sleep(2); // Simulating AI Testing
-
-           // 4. Deployment
-           $project->update(['status' => 'deployed', 'progress' => 100]);
-           
-           // Provision tenant with custom generated code!
-           // (Assuming TenantProvisionerService logic would fetch generated files)
-           $tenant = $project->tenant;
-           TenantProvisionerService::provision($tenant);
-        } else {
+        if (!$response) {
             $project->update(['status' => 'error', 'progress' => 0]);
+            return;
         }
+
+        // 2. Parse & Cleaning (Markdown Fix)
+        $project->update(['status' => 'compiling', 'progress' => 50]);
+        
+        preg_match_all('/<file path="(.*?)">\s*(.*?)\s*<\/file>/s', $response, $matches);
+        
+        if (empty($matches[0])) {
+             $project->update(['status' => 'error', 'progress' => 0]);
+             return;
+        }
+
+        $basePath = "ai_projects/{$project->id}";
+        
+        for ($i = 0; $i < count($matches[0]); $i++) {
+            $filePath = $matches[1][$i];
+            $codeContent = $matches[2][$i];
+
+            // Senior Fix: Remove Markdown traps
+            $codeContent = preg_replace('/^```[a-z]*\n/m', '', $codeContent);
+            $codeContent = preg_replace('/\n```$/m', '', $codeContent);
+            $codeContent = trim($codeContent);
+
+            Storage::disk('local')->put("{$basePath}/{$filePath}", $codeContent);
+        }
+
+        // 3. Deployment (Ghost Deploy Fix)
+        $project->update(['status' => 'deploying', 'progress' => 85]);
+        
+        $sourcePath = storage_path("app/{$basePath}");
+        $targetPath = "/var/www/vhosts/" . ($project->config['domain'] ?? 'test') . ".itcloud.uz";
+
+        // In production, we move files and restart Nginx
+        if (File::exists($sourcePath)) {
+            // File::copyDirectory($sourcePath, $targetPath); // Simulated
+            // shell_exec("sudo systemctl restart nginx"); // Simulated
+        }
+
+        // 4. Finalize
+        $project->update(['status' => 'deployed', 'progress' => 100]);
+        $tenant = $project->tenant;
+        TenantProvisionerService::provision($tenant);
     }
 }

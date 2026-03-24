@@ -18,11 +18,15 @@ class TelegramBotController extends Controller
         $data = $request->validate([
             'name' => 'required',
             'token' => 'nullable',
-            'agent_type' => 'required|in:sales,finance,support,custom',
+            'agent_type' => 'required|in:sales,finance,support,custom,pr_channel',
             'channel_type' => 'nullable|string',
             'meta_verify_token' => 'nullable|string',
             'phone_number_id' => 'nullable|string',
             'instagram_account_id' => 'nullable|string',
+            'channel_id' => 'nullable|string',
+            'schedule_time' => 'nullable|string',
+            'theme' => 'nullable|string',
+            'custom_prompt' => 'nullable|string',
             'is_active' => 'boolean'
         ]);
 

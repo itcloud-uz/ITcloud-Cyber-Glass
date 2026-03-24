@@ -31,7 +31,7 @@ class GeminiAgentService
             }
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={$this->apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$this->apiKey}";
         
         $tools = [
             ['name' => 'get_system_overview', 'description' => 'Tizimdagi umumiy holatni ko\'rish (Loyihalar, Leadlar, Botlar soni).'],
@@ -102,11 +102,11 @@ class GeminiAgentService
 
         $tools_payload = [];
         if (!empty($tools)) {
-            $tools_payload = [['function_declarations' => $tools]];
+            $tools_payload = [['functionDeclarations' => $tools]];
         }
 
         $payload = [
-            'system_instruction' => [
+            'systemInstruction' => [
                 'parts' => [['text' => $systemInstruction]]
             ],
             'contents' => [
@@ -232,7 +232,7 @@ class GeminiAgentService
     {
         if (empty($this->apiKey)) return "Xatolik: API Key.";
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$this->apiKey}";
         
         $payload = [
             'contents' => [
@@ -241,7 +241,7 @@ class GeminiAgentService
                     ['inline_data' => ['mime_type' => 'audio/ogg', 'data' => $base64Audio]]
                 ]]
             ],
-            'tools' => [['function_declarations' => [
+            'tools' => [['functionDeclarations' => [
                 ['name' => 'create_sales_lead', 'description' => 'Mijoz ma\'lumotlarini kiritish.', 'parameters' => [
                     'type' => 'OBJECT', 
                     'properties' => [
