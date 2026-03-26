@@ -234,19 +234,19 @@
                     video.play();
                     document.getElementById('liveness-msg').innerHTML = "Yuz tahlil qilinmoqda...";
                     
-                    // Kichik delay (Kamera uyg'onishi uchun)
-                    setTimeout(() => {
-                        // Canvas orqali kadrni olish (Tezlik uchun kichraytiramiz)
-                        const canvas = document.createElement('canvas');
-                        canvas.width = 400; // Standart o'lcham
-                        canvas.height = 300;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(video, 0, 0, 400, 300);
-                        const imageData = canvas.toDataURL('image/jpeg', 0.7); // Sifatni biroz pasaytiramiz (70%)
-
-                        // Backend orqali Python API ga yuborish
-                        sendFaceIDImage(imageData);
-                    }, 300);
+                            // Kichik delay (Kamera uyg'onishi uchun)
+                            faceTimeout = setTimeout(() => {
+                                // Canvas orqali kadrni olish (Tezlik uchun kichraytiramiz)
+                                const canvas = document.createElement('canvas');
+                                canvas.width = 400; // Standart o'lcham
+                                canvas.height = 300;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(video, 0, 0, 400, 300);
+                                const imageData = canvas.toDataURL('image/jpeg', 0.7); // Sifatni biroz pasaytiramiz (70%)
+        
+                                // Backend orqali Python API ga yuborish
+                                sendFaceIDImage(imageData);
+                            }, 300);
                 };
 
             } catch (err) {
@@ -271,7 +271,7 @@
                     if (faceRetryCount < 3) {
                         faceRetryCount++;
                         document.getElementById('liveness-msg').innerHTML = `<i class='fa-solid fa-rotate'></i> {{ __('Retry') }} (${faceRetryCount}/3)...`;
-                        setTimeout(() => startCamera(), 2000);
+                        faceTimeout = setTimeout(() => startCamera(), 2000);
                     } else {
                         showError("Yuz tanilmadi. Iltimos, Telegram orqali kiring.");
                         document.getElementById('liveness-msg').innerHTML = "Tahlil to'xtatildi.";
