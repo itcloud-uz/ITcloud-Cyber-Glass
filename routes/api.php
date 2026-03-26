@@ -36,7 +36,6 @@ Route::apiResource('tenants', TenantController::class)->except(['index', 'show']
 Route::patch('/tenants/{id}/status', [TenantController::class, 'changeStatus']);
 Route::post('/tenants/{id}/subscription', [TenantController::class, 'addSubscription']);
 Route::post('/tenants/{id}/upload', function(Request $request, $id) {
-    // Missing upload logic shim
     if ($request->hasFile('file')) {
         $path = $request->file('file')->store('tenants/'.$id, 'public');
         $t = Tenant::findOrFail($id);
@@ -73,7 +72,10 @@ Route::apiResource('templates', TemplateController::class)->except(['create', 'e
 // Bots
 Route::apiResource('bots', TelegramBotController::class)->except(['create', 'edit', 'show']);
 Route::post('/bots/{id}/task', [AiChatController::class, 'assignTask']);
-Route::post('/bots/{id}/set-webhook', function ($id) { return response()->json(['ok' => true]); });
+Route::post('/bots/{id}/set-webhook', function ($id) { 
+    // Logic to be implemented via Bot Service in next phase
+    return response()->json(['status' => 'success', 'message' => 'Webhook registration requested.']); 
+});
 Route::get('/bots/{id}/knowledge', function ($id) { return response()->json([]); });
 Route::post('/bots/{id}/knowledge', function ($id) { return response()->json(['status' => 'success']); });
 

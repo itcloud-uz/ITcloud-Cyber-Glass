@@ -11,9 +11,16 @@ use Illuminate\Support\Str;
 
 class AcademyController extends Controller
 {
-    private $telegramBotToken = '8295962421:AAF3uH3did42i14YPZPMYqkrKDfHy8VlTKE';
-    private $chatId = '-1003887827729';
-    private $geminiKey = 'AIzaSyCzamwAJ2myvYf_JvuAXIjj2gbpT_SAz6g';
+    private $telegramBotToken;
+    private $chatId;
+    private $geminiKey;
+
+    public function __construct()
+    {
+        $this->telegramBotToken = env('TELEGRAM_BOT_TOKEN_ACADEMY');
+        $this->chatId = env('TELEGRAM_ACADEMY_CHAT_ID');
+        $this->geminiKey = env('GEMINI_API_KEY');
+    }
 
     // Talabalar uchun Dashboard
     public function getStudentDashboard(Request $request)

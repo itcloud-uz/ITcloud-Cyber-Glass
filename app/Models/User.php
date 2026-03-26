@@ -12,7 +12,12 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'password', 'role', 'passport_number', 'face_id_photo_path', 'is_face_id_enabled', 'permissions'];
+    protected $fillable = [
+        'name', 'email', 'password', 'role', 'passport_number', 
+        'face_id_photo_path', 'is_face_id_enabled', 'permissions',
+        'phone', 'telegram_username', 'telegram_chat_id', 'is_verified',
+        'verification_hash', 'last_login_at', 'last_login_ip'
+    ];
     protected $hidden = ['password', 'remember_token'];
 
     use HasFactory, Notifiable;

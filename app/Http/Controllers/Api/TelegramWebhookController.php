@@ -11,8 +11,14 @@ use Illuminate\Support\Facades\DB;
 
 class TelegramWebhookController extends Controller
 {
-    protected $verificationBotToken = '8304799073:AAGOi1nbw29OkKY_YhrP3kOJnRGRVq-qVPY';
-    protected $academyBotToken = '8295962421:AAF3uH3did42i14YPZPMYqkrKDfHy8VlTKE';
+    protected $verificationBotToken;
+    protected $academyBotToken;
+
+    public function __construct()
+    {
+        $this->verificationBotToken = env('TELEGRAM_BOT_TOKEN_VERIFICATION');
+        $this->academyBotToken = env('TELEGRAM_BOT_TOKEN_ACADEMY');
+    }
 
     public function handle(Request $request, $botType = 'verification')
     {
