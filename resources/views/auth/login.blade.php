@@ -159,7 +159,7 @@
             </button>
         </div>
 
-        <div id="step-2-faceid" id="face-id-container" style="display: none;">
+        <div id="step-2-faceid" style="display: none;">
             <div class="scanner-box">
                 <video id="video-feed" autoplay playsinline></video>
                 <div class="scan-line"></div>
@@ -283,7 +283,18 @@
             }
         }
 
+        let faceTimeout = null;
+        let faceRetryCount = 0;
+
         async function requestTelegramOTP() {
+            // Stop any pending FaceID retries
+            faceRetryCount = 10; 
+            if (faceTimeout) clearTimeout(faceTimeout);
+
+            const btn = document.getElementById('btn-otp');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> {{ __('Sending...') }}';
+
             try {
                 const res = await fetch('/login/otp/send', {
                     method: 'POST',
@@ -291,15 +302,23 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    // Kameradagi oqimni to'xtatamiz
+                    // Stop camera
                     const video = document.getElementById('video-feed');
                     if(video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); }
                     
                     document.getElementById('step-2-faceid').style.display = 'none';
                     document.getElementById('step-3-otp').style.display = 'block';
                     showError("<span style='color:var(--neon-cyan)'>Kamera o'chirildi. Kod yuborildi.</span>");
+                } else {
+                    showError(data.message || 'Kod yuborishda xatolik yuz berdi');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-brands fa-telegram"></i> {{ __('Send code instead of Face ID') }}';
                 }
-            } catch(err) { showError('Bot bilan ishlashda xato'); }
+            } catch(err) { 
+                showError('Server bilan bog\'lanishda xato yuz berdi'); 
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-brands fa-telegram"></i> {{ __('Send code instead of Face ID') }}';
+            }
         }
 
         async function verifyOTP() {
