@@ -44,7 +44,30 @@ Route::controller(AuthController::class)->group(function() {
 // [3] MASTER ADMIN: DASHBOARD & MANAGEMENT
 Route::middleware(['auth'])->group(function() {
     Route::get('/master', [AdminController::class, 'index'])->name('master.dashboard');
+    Route::get('/academy/dashboard', [AdminController::class, 'index'])->name('academy.dashboard');
+    
+    // Internal API for Dashboard
+    Route::get('/internal-api/academy/student/dashboard', [AcademyController::class, 'getStudentDashboard']);
+    Route::post('/internal-api/academy/student/mentor/chat', [AcademyController::class, 'mentorChat']);
+    
+    // Projects & Chat
+    Route::get('/internal-api/academy/student/projects', [AcademyController::class, 'getStudentProjects']);
+    Route::post('/internal-api/academy/student/projects', [AcademyController::class, 'storeStudentProject']);
+    Route::delete('/internal-api/academy/student/projects/{id}', [AcademyController::class, 'deleteStudentProject']);
+    
+    Route::get('/internal-api/academy/chat', [AcademyController::class, 'getGlobalChat']);
+    Route::post('/internal-api/academy/chat', [AcademyController::class, 'sendChatMessage']);
+    Route::get('/internal-api/academy/chat/contacts', [AcademyController::class, 'getAcademyContacts']);
 });
+
+
+
+
+Route::get('/academy/login', function() {
+    return view('academy.login');
+})->name('academy.login');
+
+
 
 
 // [4] CLIENT PORTAL: AUTHENTICATION

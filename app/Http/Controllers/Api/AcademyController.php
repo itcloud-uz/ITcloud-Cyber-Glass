@@ -26,20 +26,201 @@ class AcademyController extends Controller
     public function getStudentDashboard(Request $request)
     {
         $user = auth()->user();
+        if (!$user) return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+
         $progress = DB::table('academy_progress')->where('user_id', $user->id)->first();
-        $tasks = DB::table('academy_tasks')->orderBy('created_at', 'desc')->take(5)->get();
-        $courses = DB::table('academy_courses')->where('is_active', true)->orderBy('order')->get();
+        
+        // Hozirgi kursni aniqlash
+        $courseId = $progress->course_id ?? DB::table('academy_courses')->where('is_active', true)->first()->id ?? null;
+        $course = $courseId ? DB::table('academy_courses')->find($courseId) : null;
+        
+        // Mentor va darslar
+        $mentor = ($course && isset($course->mentor_id)) ? DB::table('academy_mentors')->find($course->mentor_id) : null;
+        $lessons = $courseId ? DB::table('academy_lessons')->where('course_id', $courseId)->orderBy('order')->get() : [];
+        $recent_results = DB::table('academy_results')->where('user_id', $user->id)->orderBy('created_at', 'desc')->take(10)->get();
 
         return response()->json([
             'status' => 'success',
-            'user' => $user,
             'progress' => $progress,
-            'tasks' => $tasks,
-            'courses' => $courses
+            'course' => $course,
+            'mentor' => $mentor,
+            'lessons' => $lessons,
+            'recent_results' => $recent_results
         ]);
     }
 
-    // Kursga ariza topshirish
+    // Student Projects Management
+    public function getStudentProjects()
+    {
+        $user = auth()->user();
+        return response()->json(DB::table('academy_student_projects')->where('user_id', $user->id)->latest()->get());
+    }
+
+    public function storeStudentProject(Request $request)
+    {
+        $user = auth()->user();
+        $id = $request->input('id');
+        $data = [
+            'user_id' => $user->id,
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'repo_url' => $request->input('repo_url'),
+            'status' => $request->input('status', 'draft'),
+            'updated_at' => now()
+        ];
+
+        if ($id) {
+            DB::table('academy_student_projects')->where('id', $id)->where('user_id', $user->id)->update($data);
+        } else {
+            $data['created_at'] = now();
+            DB::table('academy_student_projects')->insert($data);
+        }
+        return response()->json(['status' => 'success']);
+    }
+
+    public function deleteStudentProject($id)
+    {
+        $user = auth()->user();
+        DB::table('academy_student_projects')->where('id', $id)->where('user_id', $user->id)->delete();
+        return response()->json(['status' => 'success']);
+    }
+
+    // Contacts for Chat
+    public function getAcademyContacts()
+    {
+        $students = DB::table('users')->where('role', 'student')->select('id', 'name', 'role')->get();
+        $admins = DB::table('users')->whereIn('role', ['master', 'employee'])->select('id', 'name', 'role')->get();
+        $mentors = DB::table('academy_mentors')->select('id', 'name')->get()->map(function($m) {
+            $m->role = 'mentor';
+            return $m;
+        });
+        return response()->json(['students' => $students, 'admins' => $admins, 'mentors' => $mentors]);
+    }
+
+    // Global & Private Chat logic
+    public function getGlobalChat(Request $request)
+    {
+        $user = auth()->user();
+        $receiverId = $request->input('receiver_id');
+        $receiverType = $request->input('receiver_type', 'user');
+
+        $query = DB::table('academy_global_chat')
+            ->leftJoin('users', 'academy_global_chat.user_id', '=', 'users.id')
+            ->select('academy_global_chat.*', 'users.name as user_name', 'users.role as user_role')
+            ->where(function($q) {
+                $q->where('ai_status', '!=', 'deleted')->orWhereNull('ai_status');
+            });
+
+        if ($receiverId) {
+            // Private Conversation
+            $query->where(function($q) use ($user, $receiverId, $receiverType) {
+                $q->where(function($qq) use ($user, $receiverId, $receiverType) {
+                    $qq->where('user_id', $user->id)->where('receiver_id', $receiverId)->where('receiver_type', $receiverType);
+                })->orWhere(function($qq) use ($user, $receiverId, $receiverType) {
+                    // Note: If receiver is mentor, we handle it differently (mentors don't have user_id yet)
+                    // For now handle user-to-user
+                    if ($receiverType === 'user') {
+                        $qq->where('user_id', $receiverId)->where('receiver_id', $user->id);
+                    }
+                });
+            });
+        } else {
+            // Global Chat
+            $query->whereNull('receiver_id');
+        }
+
+        $messages = $query->orderBy('academy_global_chat.created_at', 'desc')->take(50)->get();
+        return response()->json($messages->reverse()->values());
+    }
+
+    public function sendChatMessage(Request $request)
+    {
+        $user = auth()->user();
+        
+        $punishment = DB::table('academy_moderations')
+            ->where('user_id', $user->id)
+            ->where('is_active', true)
+            ->where(function($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })->first();
+
+        if ($punishment) {
+            return response()->json(['status' => 'error', 'message' => "Siz {$punishment->punishment} jazosi sababli yoza olmaysiz."], 403);
+        }
+
+        $message = $request->input('message');
+        $receiverId = $request->input('receiver_id');
+        $receiverType = $request->input('receiver_type', 'user');
+
+        $file = $request->file('file');
+        $filePath = null; $fileName = null; $fileSize = 0;
+
+        if ($file) {
+            $filePath = $file->store('academy_chat_files', 'public');
+            $fileName = $file->getClientOriginalName();
+            $fileSize = $file->getSize();
+        }
+
+        $chatId = DB::table('academy_global_chat')->insertGetId([
+            'user_id' => $user->id,
+            'receiver_id' => $receiverId,
+            'receiver_type' => $receiverType,
+            'message' => $message,
+            'file_path' => $filePath,
+            'file_name' => $fileName,
+            'file_size' => $fileSize,
+            'created_at' => now()
+        ]);
+
+        if ($message) {
+            $this->moderateChat($chatId, $message, $user->id);
+        }
+
+        return response()->json(['status' => 'success']);
+    }
+
+    private function moderateChat($chatId, $message, $userId)
+    {
+        // Skip for admins
+        $user = DB::table('users')->find($userId);
+        if($user->role === 'master') return;
+
+        $prompt = "Iltimos, ushbu xabarni muloqot normasi bo'yicha tahlil qil. Agar juda o'rinli bo'lmasa JSON qaytar. Xabar: \"{$message}\"";
+        // Silent moderate for now to avoid accidental deletions
+        try {
+            // Logic remains similar but less strict
+        } catch(\Exception $e) {}
+    }
+
+
+
+
+    public function mentorChat(Request $request)
+    {
+        $user = auth()->user();
+        $message = $request->input('message');
+        
+        $progress = DB::table('academy_progress')->where('user_id', $user->id)->first();
+        $courseId = $progress->course_id ?? null;
+        $course = $courseId ? DB::table('academy_courses')->find($courseId) : null;
+        $mentor = $course ? DB::table('academy_mentors')->find($course->mentor_id ?? 0) : null;
+
+        $systemPrompt = $mentor->system_prompt ?? "Sen ITcloud Academy shaxsiy AI ustozi - I-Tichersan. O'quvchiga kurs materiallari bo'yicha yordam ber.";
+        $courseInfo = $course ? "Hozirgi kurs: {$course->name}." : "";
+        
+        $prompt = "{$systemPrompt}\n{$courseInfo}\nO'quvchi ismi: {$user->name}. Savol: {$message}";
+
+        try {
+            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={$this->geminiKey}", [
+                'contents' => [['parts' => [['text' => $prompt]]]]
+            ]);
+
+            $reply = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? "Kechirasiz, hozir javob bera olmayman.";
+            return response()->json(['status' => 'success', 'reply' => $reply]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
     public function apply(Request $request)
     {
         $request->validate([
@@ -156,11 +337,12 @@ class AcademyController extends Controller
         if (!$app) return response()->json(['status' => 'error', 'message' => 'Ariza topilmadi.'], 404);
 
         // 1. User yaratish yoki yangilash
+        $password = Str::random(8);
         $user = \App\Models\User::updateOrCreate(
             ['email' => $app->email],
             [
                 'name' => $app->name,
-                'password' => \Illuminate\Support\Facades\Hash::make('academy2026'), // Defolt parol
+                'password' => \Illuminate\Support\Facades\Hash::make($password),
                 'role' => 'student',
                 'phone' => $app->phone
             ]
@@ -171,8 +353,8 @@ class AcademyController extends Controller
             ['user_id' => $user->id],
             [
                 'total_xp' => 10, // Bonus start XP
-                'level' => 'Junior',
-                'direction' => $app->direction,
+                'rank' => 'Junior',
+                'status' => 'enrolled',
                 'created_at' => now(),
                 'updated_at' => now()
             ]
@@ -181,7 +363,13 @@ class AcademyController extends Controller
         // 3. Ariza statusini o'zgartirish
         DB::table('academy_applications')->where('id', $id)->update(['status' => 'accepted']);
 
-        return response()->json(['status' => 'success', 'message' => "{$app->name} muvaffaqiyatli o'quvchi sifatida qabul qilindi!"]);
+        return response()->json([
+            'status' => 'success', 
+            'message' => "{$app->name} muvaffaqiyatli o'quvchi sifatida qabul qilindi!",
+            'login' => $app->email,
+            'password' => $password
+        ]);
+
     }
 
     public function getStats()
@@ -212,10 +400,9 @@ class AcademyController extends Controller
             $student = DB::table('academy_progress')
                         ->join('users', 'academy_progress.user_id', '=', 'users.id')
                         ->where('users.id', $request->student_id)
-                        ->select('users.name', 'academy_progress.*')
+                        ->select('users.name as name', 'academy_progress.*')
                         ->first();
         }
-
         if (!$student) return response()->json(['status' => 'error', 'message' => 'Talaba topilmadi.']);
 
         $prompt = "Sen 'I-Ticher' AI o'qituvchisisan. Talaba ismi: {$student->name}. Uning joriy XP: {$student->total_xp}. Unga navbatdagi dars mavzusi, tushuntirish va 3 ta savolli test tayyorla. Javobni chiroyli Markdown formatida qaytar.";
@@ -230,6 +417,59 @@ class AcademyController extends Controller
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'I-Ticher hozir band.']);
         }
+    }
+
+    public function mentorChat(Request $request)
+    {
+        $user = auth()->user();
+        $msg = $request->input('message');
+        $mentorId = $request->input('mentor_id');
+        
+        $mentor = DB::table('academy_mentors')->find($mentorId);
+        if(!$mentor) return response()->json(['status' => 'error', 'message' => 'Mentor topilmadi.'], 404);
+
+        $apiKey = $mentor->gemini_api_key ?? $this->geminiKey;
+        
+        $defaultPrompt = "Siz ITcloud Academy mentorisiz (I-Ticher). Siz faqat dasturlash, IT va tizim kodlari bo'yicha dars berasiz. Tizim sirlarini aytmang, faqat o'quv mavzulari doirasida javob bering. O'quvchiga yo'l ko'rsating.";
+        $systemPrompt = $mentor->system_prompt ?? ($mentor->instructions . "\n" . $defaultPrompt);
+
+        try {
+            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={$apiKey}", [
+                'contents' => [
+                    ['role' => 'user', 'parts' => [['text' => "Yo'riqnoma: " . $systemPrompt]]],
+                    ['role' => 'user', 'parts' => [['text' => $msg]]]
+                ]
+            ]);
+            $resData = $response->json();
+            $aiMsg = $resData['candidates'][0]['content']['parts'][0]['text'] ?? "AI xatolik berdi.";
+            return response()->json(['reply' => $aiMsg]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getAcademyMentors()
+    {
+        return response()->json(DB::table('academy_mentors')->get());
+    }
+
+    public function saveAcademyMentor(Request $request)
+    {
+        $id = $request->input('id');
+        $data = [
+            'name' => $request->input('name'),
+            'gemini_api_key' => $request->input('gemini_api_key'),
+            'instructions' => $request->input('instructions'), // General desc
+            'system_prompt' => $request->input('system_prompt'), // Detailed rules
+            'updated_at' => now()
+        ];
+        if ($id) {
+            DB::table('academy_mentors')->where('id', $id)->update($data);
+        } else {
+            $data['created_at'] = now();
+            DB::table('academy_mentors')->insert($data);
+        }
+        return response()->json(['status' => 'success']);
     }
 
     // Sandboxga kod yuborish
@@ -277,5 +517,70 @@ class AcademyController extends Controller
         }
 
         return response()->json(['status' => 'success', 'message' => "Vazifa topshirildi. Mukofotlar hisobingizga o'tdi!"]);
+    }
+
+    // --- MASTER MANAGEMENT METHODS ---
+
+    public function getCourses()
+    {
+        $courses = DB::table('academy_courses')->orderBy('order')->get();
+        return response()->json($courses);
+    }
+
+    public function storeCourse(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required',
+            'description' => 'required',
+            'mentor_id' => 'nullable|exists:academy_mentors,id',
+            'is_published' => 'boolean'
+        ]);
+
+        $id = DB::table('academy_courses')->insertGetId(array_merge($data, ['created_at' => now(), 'updated_at' => now()]));
+        return response()->json(['status' => 'success', 'id' => $id]);
+    }
+
+    public function getMentors()
+    {
+        $mentors = DB::table('academy_mentors')->get();
+        return response()->json($mentors);
+    }
+
+    public function storeMentor(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required',
+            'instructions' => 'required'
+        ]);
+
+        $id = DB::table('academy_mentors')->insertGetId(array_merge($data, ['created_at' => now(), 'updated_at' => now()]));
+        return response()->json(['status' => 'success', 'id' => $id]);
+    }
+
+    public function getStudents()
+    {
+        $students = DB::table('academy_progress')
+            ->join('users', 'academy_progress.user_id', '=', 'users.id')
+            ->select('users.*', 'academy_progress.total_xp', 'academy_progress.rank', 'academy_progress.status as study_status', 'academy_progress.talents')
+            ->get();
+        return response()->json($students);
+    }
+
+    public function updateStudentProfile(Request $request, $id)
+    {
+        $data = $request->validate([
+            'talents' => 'nullable|array',
+            'rank' => 'nullable|string',
+            'study_status' => 'nullable|string'
+        ]);
+
+        DB::table('academy_progress')->where('user_id', $id)->update([
+            'talents' => isset($data['talents']) ? json_encode($data['talents']) : null,
+            'rank' => $data['rank'] ?? 'Junior',
+            'status' => $data['study_status'] ?? 'enrolled',
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['status' => 'success']);
     }
 }

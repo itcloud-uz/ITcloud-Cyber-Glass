@@ -21,6 +21,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+            $user = Auth::user();
+
+            if ($user->role === 'student') {
+                $request->session()->put('face_id_verified', true);
+                return response()->json(['status' => 'success', 'redirect' => route('academy.dashboard')]);
+            }
+
             return response()->json(['status' => 'success', 'step' => 'face_id_required']);
         }
 
@@ -87,7 +94,7 @@ class AuthController extends Controller
             // Prioritize user's private chat ID if available, otherwise fallback to master group
             $chatId = !empty($user->telegram_chat_id) ? $user->telegram_chat_id : env('TELEGRAM_MASTER_CHAT_ID');
 
-            $message = "🔐 ITcloud Master Autentifikatsiya: \n\nSizning login kodingiz: $otp\n\nUshbu kodni hech kimga bermang!";
+            $message = "🔐 ITcloud Master Autentifikatsiya: \n\nSizning login kodingiz: *$otp*\n\nUshbu kodni hech kimga bermang!";
             
             try {
                 $response = Http::withoutVerifying()->post("https://api.telegram.org/bot{$token}/sendMessage", [

@@ -29,7 +29,7 @@ Route::put('/price-services/{id}', function (Request $request, $id) {
     }
 });
 
-Route::get('/dashboard/analytics', [AnalyticsController::class, 'index']);
+Route::get('/dashboard/analytics', [AnalyticsController::class, 'dashboardData']);
 
 // Tenants
 Route::apiResource('tenants', TenantController::class)->except(['index', 'show']);
@@ -106,6 +106,21 @@ Route::get('/academy/applications', [AcademyController::class, 'getApplications'
 Route::put('/academy/applications/{id}', [AcademyController::class, 'updateApplication']);
 Route::delete('/academy/applications/{id}', [AcademyController::class, 'deleteApplication']);
 Route::post('/academy/applications/{id}/approve', [AcademyController::class, 'approveApplication']);
+
+// Academy Advanced Management
+Route::get('/academy/courses', [AcademyController::class, 'getCourses']);
+Route::post('/academy/courses', [AcademyController::class, 'storeCourse']);
+Route::get('/academy/mentors', [AcademyController::class, 'getMentors']);
+Route::post('/academy/mentors', [AcademyController::class, 'storeMentor']);
+Route::get('/academy/students', [AcademyController::class, 'getStudents']);
+Route::put('/academy/students/{id}/profile', [AcademyController::class, 'updateStudentProfile']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/academy/student/dashboard', [AcademyController::class, 'getStudentDashboard']);
+    Route::post('/academy/student/mentor/chat', [AcademyController::class, 'mentorChat']);
+});
+
+
 
 Route::middleware('auth:sanctum')->group(function() {
     Route::get('/academy/dashboard', [AcademyController::class, 'getStudentDashboard']);

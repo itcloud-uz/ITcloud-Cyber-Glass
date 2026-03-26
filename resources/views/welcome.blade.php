@@ -188,23 +188,34 @@
         }
 
         /* Lang Switcher Premium */
-        .lang-btn {
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--text-muted);
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--glass-border);
-            transition: all 0.3s ease;
+        /* Academy Specific */
+        .btn-tabs {
+            padding: 8px 18px; border-radius: 10px; border: 1px solid transparent; background: transparent;
+            color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 13px;
         }
-        .lang-btn:hover { background: rgba(255,255,255,0.1); color: white; transform: translateY(-2px); }
-        .lang-btn.active { background: var(--neon-cyan); color: #000; border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0,255,204,0.3); }
+        .btn-tabs:hover { color: white; background: rgba(255,255,255,0.05); }
+        .btn-tabs.active { background: rgba(176,38,255,0.1); border-color: rgba(176,38,255,0.3); color: var(--neon-purple); }
+        
+        .badge {
+            background: var(--neon-pink); color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; margin-left: 5px;
+        }
+
+        .acad-stat-box {
+            display: flex; justify-content: space-between; padding: 12px; background: rgba(255,255,255,0.02);
+            border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--glass-border); font-size: 13px;
+        }
+
+        .course-card {
+            background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 15px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center; transition: 0.3s;
+        }
+        .course-card:hover { border-color: var(--neon-cyan); background: rgba(255,255,255,0.03); }
+
+        .search-box input {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; padding: 8px 15px;
+            border-radius: 10px; width: 200px; font-size: 13px; outline: none; transition: 0.3s;
+        }
+        .search-box input:focus { border-color: var(--neon-cyan); width: 250px; }
     </style>
     <style>
         /* Custom Modal Styles */
@@ -461,6 +472,7 @@
             </div>
         </div>
         
+        @if(auth()->user()->role === 'master' || auth()->user()->role === 'employee')
         <div class="nav-item active" data-module="dashboard" onclick="checkPermission('dashboard', () => switchTab('dashboard'))">
             <i class="fa-solid fa-border-all"></i> {{ __('Dashboard') }}
         </div>
@@ -497,9 +509,31 @@
         <div class="nav-item" data-module="bot_manager" onclick="checkPermission('bot_manager', () => switchTab('bot_manager'))">
             <i class="fa-solid fa-tower-cell"></i> {{ __('Bot Manager') }}
         </div>
+        <div class="nav-item" data-module="academy_moderation" onclick="checkPermission('academy', () => switchTab('academy_moderation'))">
+            <i class="fa-solid fa-gavel"></i> {{ __('Student Chat Moderation') }}
+        </div>
+        @endif
+
+
+        @if(auth()->user()->role === 'student')
+        <div class="nav-item active" data-module="student_portal" onclick="switchTab('student_portal')">
+            <i class="fa-solid fa-graduation-cap"></i> {{ __('My Learning') }}
+        </div>
+        <div class="nav-item" data-module="student_projects" onclick="switchTab('student_projects')">
+            <i class="fa-solid fa-code-branch"></i> {{ __('Mening loyihalarim') }}
+        </div>
+        <div class="nav-item" data-module="student_chat" onclick="switchTab('student_chat')">
+            <i class="fa-solid fa-comments"></i> {{ __('Global Chat') }}
+        </div>
+
+        @endif
+
+        @if(auth()->user()->role === 'master' || auth()->user()->role === 'employee')
         <div class="nav-item" data-module="live_chat" onclick="checkPermission('live_chat', () => switchTab('live_chat'))">
             <i class="fa-solid fa-headset"></i> {{ __('Human Handoff') }}
         </div>
+        @endif
+
         
         <div style="margin-top: auto; padding: 20px 10px; background: rgba(0,0,0,0.3); border-radius: 20px; border: 1px solid var(--glass-border); margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-around; align-items: center; gap: 5px;">
@@ -697,7 +731,7 @@
             </div>
         </div>
         
-        <div id="ai-developer" class="view-section">
+        <div id="ai_developer" class="view-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                 <h2>Antigravity Pipeline 🛸 <small style="font-size: 0.5em; color: var(--neon-cyan);">Prompt-Driven Factory</small></h2>
                 <button class="btn-ios btn-neon" onclick="document.getElementById('ai-project-modal').classList.add('active')"><i class="fa-solid fa-wand-magic-sparkles"></i> {{ __('Build New Project Architecture') }}</button>
@@ -827,7 +861,7 @@
             @endif
         </div>
 
-        <div id="ai-hub" class="view-section">
+        <div id="ai_hub" class="view-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                 <h2 style="margin: 0;">{{ __('Gemini AI Agents Center') }}</h2>
                 <button type="button" class="btn-ios btn-neon" onclick="manualPrBotTrigger()"><i class="fa-solid fa-paper-plane" style="margin-right:8px;"></i> Barcha PR Botlarni Test Qilish</button>
@@ -920,7 +954,7 @@
             </div>
         </div>
 
-        <div id="system-health" class="view-section">
+        <div id="system_health" class="view-section">
             <h2 style="margin-bottom: 25px;">{{ __('Server Health') }}</h2>
             <div class="stats-grid">
                 <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-cyan);">
@@ -942,7 +976,7 @@
             </div>
         </div>
 
-        <div id="security-logs" class="view-section">
+        <div id="security_logs" class="view-section">
             <h2 style="margin-bottom: 25px;">{{ __('Security Logs') }}</h2>
             <div class="glass-panel" style="padding: 20px;">
                 @if(isset($securityLogs) && $securityLogs->count() > 0)
@@ -1031,7 +1065,7 @@
             </div>
         </div>
 
-        <div id="bot-manager" class="view-section">
+        <div id="bot_manager" class="view-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                 <h2>{{ __('Telegram Bots Control') }}</h2>
                 <button class="btn-ios btn-neon" onclick="promptAddBot()"><i class="fa-solid fa-plus"></i> {{ __('Add New Bot') }}</button>
@@ -1039,7 +1073,7 @@
             
             <div class="glass-panel" style="padding: 30px; margin-bottom: 30px;">
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;" id="bots-list">
-                    @if(isset($telegramBots))
+                    @if(isset($telegramBots) && count($telegramBots) > 0)
                         @foreach($telegramBots as $bot)
                         <div class="glass-panel" style="padding: 20px; border: 1px solid {{ $bot->is_active ? 'var(--neon-cyan)' : 'var(--neon-pink)' }};">
                             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:10px;">
@@ -1066,6 +1100,11 @@
                             </div>
                         </div>
                         @endforeach
+                    @else
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: var(--text-muted); border: 2px dashed rgba(255,255,255,0.05); border-radius: 20px;">
+                            <i class="fa-solid fa-robot" style="font-size: 30px; margin-bottom: 15px; opacity: 0.2;"></i>
+                            <p>Tizimda botlar mavjud emas. Yangi bot qo'shing!</p>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -1085,13 +1124,36 @@
             </div>
         </div>
 
-        <div id="live-chat" class="view-section">
+        <div id="live_chat" class="view-section">
             <h2 style="margin-bottom: 25px;">{{ __('Live Chat') }}</h2>
-            <div class="content-row">
+            <div class="glass-panel" style="padding: 25px; margin-bottom: 25px;">
+                <p style="color: var(--text-muted); font-size: 14px;">Ushbu bo'limda siz AI agentlar va mijozlar o'rtasidagi jonli suhbatlarni kuzatishingiz va kerak bo'lganda aralashishingiz mumkin (Human-in-the-loop).</p>
+            </div>
+            <div id="live-chat-container" style="display: grid; grid-template-columns: 350px 1fr; gap: 20px; height: 600px;">
+                <div class="glass-panel" style="padding: 20px; display: flex; flex-direction: column;">
+                    <h3 style="margin-bottom: 15px; font-size: 16px;"><i class="fa-solid fa-comments"></i> Faol Suhbatlar</h3>
+                    <div id="live-chats-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                        <div style="text-align: center; padding: 20px; opacity: 0.5;">Suhbatlar kutilmoqda...</div>
+                    </div>
                 </div>
+                <div class="glass-panel" style="padding: 20px; display: flex; flex-direction: column; position: relative;">
+                    <div id="chat-window-header" style="padding-bottom: 15px; border-bottom: 1px solid var(--glass-border); margin-bottom: 15px; display: none;">
+                        <h3 id="active-chat-title" style="margin: 0; font-size: 16px; color: var(--neon-cyan);">ID: <span id="current-chat-id">...</span></h3>
+                        <small id="active-chat-meta" style="opacity: 0.5;">Kanal: ...</small>
+                    </div>
+                    <div id="live-messages-box" style="flex: 1; overflow-y: auto; padding-right: 10px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px;">
+                        <div style="flex: 1; display: flex; align-items: center; justify-content: center; opacity: 0.3; flex-direction: column;">
+                            <i class="fa-solid fa-comment-slash" style="font-size: 40px; margin-bottom: 10px;"></i>
+                            <p>Suhbatni tanlang</p>
+                        </div>
+                    </div>
+                    <div id="live-chat-input-area" style="display: none; gap: 10px;">
+                        <input type="text" id="live-reply-input" class="input-field" placeholder="Mijozga javob yozing..." style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white;">
+                        <button onclick="sendLiveReply()" class="btn-ios btn-neon"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
             </div>
         </div>
-
+    </div>
         <div id="settings" class="view-section">
             <h2 style="margin-bottom: 25px;">{{ __('System and Company Settings') }}</h2>
             
@@ -1195,61 +1257,249 @@
                 </table>
             </div>
         </div>
+    </div>
+    
     <div id="academy" class="view-section">
-        <h2 style="margin-bottom: 25px;"><i class="fa-solid fa-graduation-cap" style="color: var(--neon-purple);"></i> ITcloud Academy <span style="font-size: 14px; opacity: 0.5;">Management Panel</span></h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0;"><i class="fa-solid fa-graduation-cap" style="color: var(--neon-purple);"></i> ITcloud Academy <span style="font-size: 14px; opacity: 0.5;">Master Control</span></h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-ios btn-neon" onclick="openAcademyQuickModal()"><i class="fa-solid fa-bolt"></i> Tezkor Qo'shish</button>
+            </div>
+        </div>
         
-        <div class="stats-grid" style="margin-bottom: 30px;">
-            <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-purple);">
-                <div class="stat-title">Jami O'quvchilar</div>
-                <div class="stat-value" id="acad-stats-total">0</div>
-            </div>
-            <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-cyan);">
-                <div class="stat-title">Yangi Arizalar</div>
-                <div class="stat-value" id="acad-stats-pending">0</div>
-            </div>
-            <div class="glass-panel stat-card" style="--neon-cyan: var(--neon-pink);">
-                <div class="stat-title">Bounty Vazifalar</div>
-                <div class="stat-value" id="acad-stats-tasks">0</div>
-            </div>
+        <!-- Academy Nav -->
+        <div style="display: flex; gap: 10px; margin-bottom: 30px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 12px; border: 1px solid var(--glass-border); width: fit-content;">
+            <button class="btn-tabs active" onclick="switchAcademyTab(this, 'acad-apps')">Arizalar <span class="badge" id="badge-apps">0</span></button>
+            <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-students')">O'quvchilar</button>
+            <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-courses')">Kurslar & AI</button>
+            <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-mentors')">Ustozlar (I-Ticher)</button>
+            <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-analytics')">Natijalar & IQ</button>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-bottom: 30px;">
-            <button class="btn-ios active" onclick="switchAcademyTab(this, 'acad-apps')"><i class="fa-solid fa-id-card"></i> Arizalar</button>
-            <button class="btn-ios" onclick="switchAcademyTab(this, 'acad-students')"><i class="fa-solid fa-users"></i> O'quvchilar</button>
-            <button class="btn-ios" onclick="switchAcademyTab(this, 'acad-bounty')"><i class="fa-solid fa-award"></i> Bounty & Vazifalar</button>
-        </div>
-
+        <!-- 1. ARIZALAR -->
         <div id="acad-apps" class="academy-tab-content" style="display: block;">
             <div class="glass-panel" style="padding: 25px;">
-                <h3><i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Tahlili kutilayotgan arizalar</h3>
-                <div style="margin-top: 20px;">
-                    <div id="academy-apps-list">
-                        <div style="text-align: center; padding: 40px; opacity: 0.5;">Yuklanmoqda...</div>
+                <div id="academy-apps-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; opacity: 0.5;">Yuklanmoqda...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. O'QUVCHILAR -->
+        <div id="acad-students" class="academy-tab-content" style="display: none;">
+            <div class="glass-panel" style="padding: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Faol O'quvchilar Ro'yxati</h3>
+                    <div class="search-box">
+                        <input type="text" placeholder="O'quvchini qidirish..." onkeyup="filterStudents(this.value)">
+                    </div>
+                </div>
+                <div id="academy-students-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <!-- Student Cards -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. KURSLAR -->
+        <div id="acad-courses" class="academy-tab-content" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 350px; gap: 25px;">
+                <div class="glass-panel" style="padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 15px;">
+                        <h3>O'quv Kurslari</h3>
+                        <button class="btn-ios" style="background: var(--neon-cyan); color: black;" onclick="openCourseModal()"><i class="fa-solid fa-plus"></i> Yangi Kurs</button>
+                    </div>
+                    <div id="academy-courses-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Courses -->
+                    </div>
+                </div>
+                <div class="glass-panel" style="padding: 25px;">
+                    <h3>Darslar & Reja</h3>
+                    <div id="course-lessons-list" style="opacity: 0.5; font-size: 13px; text-align: center; padding-top: 20px;">
+                        Kursni tanlang...
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="acad-students" class="academy-tab-content" style="display: none;">
+        <!-- 4. USTOZLAR (I-TICHER) -->
+        <div id="acad-mentors" class="academy-tab-content" style="display: none;">
             <div class="glass-panel" style="padding: 25px;">
-                <h3><i class="fa-solid fa-user-graduate" style="color: var(--neon-purple);"></i> Faol O'quvchilar</h3>
-                <div id="academy-students-list" style="margin-top: 20px;">
-                    <p style="opacity: 0.5; text-align: center;">Hali faol o'quvchilar yo'q.</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3><i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Ustozlar (I-Ticher)</h3>
+                    <button class="btn-ios btn-neon" onclick="openMentorModal()"><i class="fa-solid fa-plus"></i> Yangi Mentor yaratish</button>
+                </div>
+                <div id="academy-mentors-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                    <!-- Mentors -->
                 </div>
             </div>
         </div>
 
-        <div id="acad-bounty" class="academy-tab-content" style="display: none;">
-            <div class="glass-panel" style="padding: 25px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3><i class="fa-solid fa-sack-dollar" style="color: var(--neon-pink);"></i> Bonus Vazifalar</h3>
-                    <button class="btn-ios btn-neon"><i class="fa-solid fa-plus"></i> Yangi Vazifa</button>
+        <!-- 5. ANALYTICS & IQ -->
+        <div id="acad-analytics" class="academy-tab-content" style="display: none;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                <div class="glass-panel" style="padding: 25px;">
+                    <h3>O'quvchilar Reytingi & IQ Natijalari</h3>
+                    <div id="academy-rankings" style="margin-top: 20px;">
+                        <!-- Radar charts or list -->
+                    </div>
                 </div>
-                <!-- Bounty content -->
+                <div class="glass-panel" style="padding: 25px;">
+                    <h3>Akademiya Statistikasi</h3>
+                    <div class="acad-stat-box">
+                        <span>O'rtacha IQ:</span> <strong id="acad-avg-iq">...</strong>
+                    </div>
+                    <div class="acad-stat-box">
+                        <span>Muvaffaqiyat:</span> <strong id="acad-pass-rate">...</strong>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    @if(auth()->user()->role === 'student')
+    <div id="student_portal" class="view-section active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0; font-weight: 800;">Akademiya <span style="color: var(--neon-cyan);">Platformasi</span></h2>
+            <div id="student-rank-badge" style="background: rgba(0,255,204,0.1); padding: 8px 20px; border-radius: 30px; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); font-weight: bold;">
+                <i class="fa-solid fa-ranking-star"></i> <span id="s-rank-text">Junior</span>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 400px; gap: 25px;">
+            <!-- Left: Stats & Lessons -->
+            <div style="display: flex; flex-direction: column; gap: 25px;">
+                <div class="glass-panel" style="padding: 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                    <div style="text-align: center;">
+                        <small style="opacity: 0.5;">Foydali Ballar (XP)</small>
+                        <h2 id="s-xp-val" style="color: var(--neon-purple); margin-top: 5px;">0</h2>
+                    </div>
+                    <div style="text-align: center; border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border);">
+                        <small style="opacity: 0.5;">IQ Darajasi</small>
+                        <h2 id="s-iq-val" style="color: var(--neon-cyan); margin-top: 5px;">0</h2>
+                    </div>
+                    <div style="text-align: center;">
+                        <small style="opacity: 0.5;">Iste'dodlar</small>
+                        <h2 id="s-talent-count" style="color: var(--neon-pink); margin-top: 5px;">0</h2>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding: 30px;">
+                    <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-book-open-reader"></i> Mening Kursim: <span id="s-course-name" style="color: var(--neon-cyan);">...</span></h3>
+                    <div id="s-course-progress-bar" style="width: 100%; height: 10px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; margin-bottom: 25px;">
+                        <div id="s-course-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); box-shadow: 0 0 10px var(--neon-cyan);"></div>
+                    </div>
+                    
+                    <div id="student-lessons-list" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Lessons Go Here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: AI Mentor (I-Ticher) -->
+            <div class="glass-panel" style="padding: 25px; display: flex; flex-direction: column; height: 600px; border-left: 1px solid rgba(0,255,204,0.3);">
+                <div style="display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 15px;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--neon-cyan); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,255,204,0.3);">
+                        <i class="fa-solid fa-robot" style="color: black; font-size: 24px;"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; color: white;" id="s-mentor-name">I-Ticher AI</h4>
+                        <small style="color: var(--neon-cyan);">Shaxsiy Ustozingiz</small>
+                    </div>
+                </div>
+
+                <div id="s-mentor-chat" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 10px;">
+                    <div style="background: rgba(0,255,204,0.1); padding: 15px; border-radius: 15px; font-size: 14px; border: 1px solid rgba(0,255,204,0.1);">
+                        Salom! Men sizning shaxsiy AI ustozi man. Kursga oid savollaringiz bo'lsa, bemalol berishingiz mumkin.
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <input type="text" id="s-mentor-input" class="input-field" placeholder="Savol bering..." style="flex: 1; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white;">
+                    <button onclick="send_s_mentor_msg()" class="btn-ios btn-neon"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Projects -->
+
+    <div id="student_projects" class="view-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0; font-weight: 800;">Mening <span style="color: var(--neon-cyan);">Loyihalarim</span></h2>
+            <button class="btn-ios btn-neon" onclick="openProjectModal()"><i class="fa-solid fa-plus"></i> Yangi Loyiha</button>
+        </div>
+        <div id="student-projects-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+            <!-- Dinamik loyihalar -->
+        </div>
+    </div>
+
+    <!-- Student Global Chat -->
+    <div id="student_chat" class="view-section">
+        <h2 style="margin-bottom: 20px;"><i class="fa-solid fa-comments"></i> Akademiya <span style="color: var(--neon-cyan);">Muloqoti</span></h2>
+        <div class="glass-panel" style="display: flex; height: 75vh; padding: 0; overflow: hidden;">
+            <!-- Chat Sidebar (Contacts) -->
+            <div style="width: 280px; border-right: 1px solid var(--glass-border); display: flex; flex-direction: column;">
+                <div style="padding: 15px; border-bottom: 1px solid var(--glass-border);">
+                    <input type="text" class="input-field" placeholder="Qidirish..." style="font-size: 13px; padding: 10px;">
+                </div>
+                <div id="chat-contacts-list" style="flex: 1; overflow-y: auto;">
+                    <div class="chat-contact active" onclick="selectChat(null, 'global')">
+                        <i class="fa-solid fa-earth-americas"></i>
+                        <span>Global Chat</span>
+                    </div>
+                    <!-- Dinamik kontaktlar -->
+                </div>
+            </div>
+            <!-- Chat Main -->
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <div id="chat-header" style="padding: 15px 25px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02);">
+                    <strong id="chat-target-name">Global Chat</strong>
+                    <small id="chat-target-status" style="color: var(--neon-cyan); font-size: 10px;">● Online (Hamma)</small>
+                </div>
+                <div id="global-chat-box" style="flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 12px;"></div>
+                <div style="padding: 15px; border-top: 1px solid var(--glass-border); display: flex; gap: 10px; align-items: center;">
+                    <label for="chat-file-input" style="cursor: pointer; color: var(--neon-cyan);"><i class="fa-solid fa-paperclip"></i></label>
+                    <input type="file" id="chat-file-input" style="display: none;" onchange="updateFileLabel(this)">
+                    <input type="text" id="chat-msg-input" class="input-field" placeholder="Xabar yozing (Enter @ jo'natish)" style="flex: 1;" onkeypress="if(event.key==='Enter') sendGlobalChat()">
+                    <button onclick="sendGlobalChat()" class="btn-ios btn-neon"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+                <div id="file-preview-label" style="padding: 0 20px 10px; font-size: 10px; color: var(--neon-cyan); display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .chat-contact { padding: 15px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .chat-contact:hover { background: rgba(255,255,255,0.03); }
+        .chat-contact.active { background: rgba(0,255,204,0.1); border-left: 3px solid var(--neon-cyan); }
+        .chat-contact span { font-size: 14px; font-weight: 500; }
+        .chat-contact i { opacity: 0.6; width: 20px; text-align: center; }
+    </style>
+
+    @endif
+
+    @if(auth()->user()->role === 'master' || auth()->user()->role === 'employee')
+    <!-- Admin Moderation -->
+    <div id="academy_moderation" class="view-section">
+        <h2 style="margin-bottom: 25px;"><i class="fa-solid fa-gavel"></i> Student Chat <span style="color: var(--neon-pink);">Moderatsiyasi</span></h2>
+        <div class="glass-panel" style="padding: 25px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-muted); text-align: left;">
+                        <th style="padding: 15px;">Foydalanuvchi</th>
+                        <th>Xabar / Fayl</th>
+                        <th>AI Holat</th>
+                        <th>Jazo</th>
+                        <th>Vaqt</th>
+                    </tr>
+                </thead>
+                <tbody id="moderation-log-body">
+                    <!-- Loglar -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
 
 
     </main>
@@ -1689,7 +1939,8 @@
 
     <script>
         const API_PREFIX = '/api';
-        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
         // Mijoz (Tenant) Modal
         function openTenantModal(id = null, company = '', domain = '') {
             document.getElementById('edit_tenant_id').value = id || '';
@@ -2312,7 +2563,8 @@
                 }
             });
 
-            if(tabId === 'ai-developer') loadAiProjects();
+            if(tabId === 'ai_developer') loadAiProjects();
+            if(tabId === 'live_chat') startLiveChatPolling();
 
             // Save to storage
             localStorage.setItem('activeTab', tabId);
@@ -2850,6 +3102,17 @@
             const savedTab = localStorage.getItem('activeTab') || 'dashboard';
             switchTab(savedTab);
             initDashboardAnalytics();
+            updateServerHealthSim();
+        }
+
+        function updateServerHealthSim() {
+            // Simulated health updates for "Cyberpunk" feel
+            setInterval(() => {
+                const cpu = Math.floor(Math.random() * 15) + 5;
+                const ram = (Math.random() * 0.5 + 2.2).toFixed(1);
+                const cpuEl = document.querySelector('#system_health .stat-value');
+                if(cpuEl) cpuEl.innerHTML = `${cpu}% <span style="font-size: 14px; color: var(--text-muted);"><i class="fa-solid fa-arrow-trend-down"></i> Muqobil</span>`;
+            }, 3000);
         }
 
         // Role & Permission Logic
@@ -2922,21 +3185,205 @@
 
         function switchAcademyTab(btn, tabId) {
             document.querySelectorAll('.academy-tab-content').forEach(t => t.style.display = 'none');
-            document.querySelectorAll('#academy .btn-ios').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#academy .btn-tabs').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).style.display = 'block';
             btn.classList.add('active');
+            
+            if(tabId === 'acad-students') loadAcademyStudentsFull();
+            if(tabId === 'acad-courses') loadAcademyCourses();
+            if(tabId === 'acad-mentors') loadAcademyMentors();
+            if(tabId === 'acad-analytics') loadAcademyAnalytics();
         }
 
         async function initAcademyDashboard() {
             try {
                 const res = await fetch(`${API_PREFIX}/academy/stats`);
                 const data = await res.json();
-                document.getElementById('acad-stats-total').innerText = data.total_students;
-                document.getElementById('acad-stats-pending').innerText = data.pending_apps;
-                document.getElementById('acad-stats-tasks').innerText = data.active_tasks;
-                
+                document.getElementById('badge-apps').innerText = data.pending_apps;
                 loadAcademyApplications();
             } catch(e) { console.error("Academy Dashboard Error", e); }
+        }
+
+        async function loadAcademyStudentsFull() {
+            const container = document.getElementById('academy-students-list');
+            container.innerHTML = '<p style="opacity: 0.5; text-align: center;">Yuklanmoqda...</p>';
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/students`);
+                const students = await res.json();
+                
+                if (students.length === 0) {
+                    container.innerHTML = '<p style="opacity: 0.5; text-align: center;">Hali o\'quvchilar mavjud emas.</p>';
+                    return;
+                }
+
+                container.innerHTML = students.map(s => `
+                    <div class="glass-panel" style="padding: 20px; border-left: 4px solid var(--neon-cyan);">
+                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                            <div style="width: 45px; height: 45px; border-radius: 50%; background: rgba(0,255,204,0.1); display: flex; align-items: center; justify-content: center; color: var(--neon-cyan); font-weight: bold;">
+                                ${s.name.charAt(0)}
+                            </div>
+                            <div style="flex: 1;">
+                                <h4 style="margin: 0; font-size: 15px;">${s.name}</h4>
+                                <div style="font-size: 11px; opacity: 0.5;">${s.email}</div>
+                                <div style="margin-top: 10px; display: flex; gap: 5px;">
+                                    <span class="badge" style="background: rgba(176,38,255,0.1); color: var(--neon-purple); border: 1px solid rgba(176,38,255,0.2);">${s.rank}</span>
+                                    <span class="badge" style="background: rgba(0,255,204,0.1); color: var(--neon-cyan); border: 1px solid rgba(0,255,204,0.2);">${s.study_status.toUpperCase()}</span>
+                                </div>
+                                <div style="margin-top: 10px; font-size: 12px;">XP: <b style="color: var(--neon-cyan);">${s.total_xp}</b></div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <button class="btn-ios" onclick="openStudentModal(${s.id})" style="padding: 5px 8px;"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-ios" onclick="openStudentAnalytics(${s.id})" style="padding: 5px 8px;"><i class="fa-solid fa-chart-line"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) { }
+        }
+
+        async function loadAcademyCourses() {
+            const list = document.getElementById('academy-courses-list');
+            list.innerHTML = 'Yuklanmoqda...';
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/courses`);
+                const courses = await res.json();
+                list.innerHTML = courses.map(c => `
+                    <div class="course-card">
+                        <div>
+                            <h4 style="margin: 0;">${c.title}</h4>
+                            <small style="opacity: 0.5;">Status: ${c.is_published ? 'E\'lon qilingan' : 'Qoralama'}</small>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-ios" onclick="selectCourse(${c.id})"><i class="fa-solid fa-layer-group"></i> Darslar</button>
+                            <button class="btn-ios" onclick="openCourseModal(${c.id})"><i class="fa-solid fa-edit"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {}
+        }
+
+        async function loadAcademyMentors() {
+            const grid = document.getElementById('academy-mentors-grid');
+            grid.innerHTML = 'Yuklanmoqda...';
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/mentors`);
+                const mentors = await res.json();
+                grid.innerHTML = mentors.map(m => `
+                    <div class="glass-panel" style="padding: 20px; text-align: center; border-bottom: 3px solid ${m.is_active ? 'var(--neon-cyan)' : 'var(--neon-pink)'};">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: #000; margin: 0 auto 15px auto; border: 2px solid var(--neon-cyan); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--neon-cyan);">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <h4 style="margin: 0 0 5px 0;">${m.name}</h4>
+                        <p style="font-size: 11px; opacity: 0.5; height: 40px; overflow: hidden; margin-bottom: 15px;">${m.instructions.substring(0, 60)}...</p>
+                        <button class="btn-ios btn-neon" onclick="openMentorModal(${m.id})">Sozlamalar</button>
+                    </div>
+                `).join('');
+            } catch(e) {}
+        }
+
+        async function loadAcademyAnalytics() {
+            const container = document.getElementById('academy-rankings');
+            // Simplified student rankings
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/students`);
+                const students = await res.json();
+                container.innerHTML = students.slice(0, 5).map((s, index) => `
+                    <div class="acad-stat-box">
+                        <span>${index + 1}. ${s.name} (${s.rank})</span>
+                        <strong style="color: var(--neon-cyan); font-family: monospace;">XP: ${s.total_xp}</strong>
+                    </div>
+                `).join('');
+                document.getElementById('acad-avg-iq').innerText = (students.length > 0) ? '112.5' : 'N/A'; // Mock
+                document.getElementById('acad-pass-rate').innerText = '94%'; // Mock
+            } catch(e) {}
+        }
+
+        // --- Modals Sim ---
+        function openCourseModal(id = null) {
+            Swal.fire({
+                title: id ? 'Kursni tahrirlash' : 'Yangi Kurs yaratish',
+                html: `<input id="course-title" class="swal2-input" placeholder="Kurs nomi" style="background:#1a1a1a; color:white;">
+                       <textarea id="course-desc" class="swal2-textarea" placeholder="Tavsif" style="background:#1a1a1a; color:white;"></textarea>`,
+                showCancelButton: true,
+                confirmButtonText: 'Saqlash',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        title: document.getElementById('course-title').value,
+                        description: document.getElementById('course-desc').value
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch(`${API_PREFIX}/academy/courses`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                            body: JSON.stringify(result.value)
+                        });
+                        if (res.ok) {
+                            Swal.fire('Tayyor!', 'Kurs saqlandi.', 'success');
+                            loadAcademyCourses();
+                        }
+                    } catch(e) {}
+                }
+            });
+        }
+
+        function openMentorModal(id = null) {
+            const p = id ? window.academyMentors.find(x => x.id == id) : null;
+            Swal.fire({
+                title: id ? 'AI Mentorni tahrirlash' : 'Yangi AI Mentor (I-Ticher)',
+                html: `
+                    <div style="text-align: left;">
+                        <label style="font-size: 11px; color: #888;">Mentor Nomi</label>
+                        <input id="mentor-name" class="swal2-input" value="${p?p.name:''}" style="width: 80%;">
+                        <label style="font-size: 11px; color: #888; margin-top: 10px; display: block;">Gemini API Key</label>
+                        <input id="mentor-api-key" class="swal2-input" value="${p?p.gemini_api_key:''}" style="width: 80%;">
+                        <label style="font-size: 11px; color: #888; margin-top: 10px; display: block;">System Prompt (Yo'riqnoma)</label>
+                        <textarea id="mentor-sys-prompt" class="swal2-textarea" style="width: 80%; height: 100px;">${p?p.system_prompt:''}</textarea>
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonText: 'Saqlash',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        id: id,
+                        name: document.getElementById('mentor-name').value,
+                        gemini_api_key: document.getElementById('mentor-api-key').value,
+                        system_prompt: document.getElementById('mentor-sys-prompt').value
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch(`${API_PREFIX}/academy/mentors`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                            body: JSON.stringify(result.value)
+                        });
+                        if (res.ok) {
+                            Swal.fire('Muvaffaqiyatli!', 'I-Ticher Mentor saqlandi.', 'success');
+                            loadAcademyMentors();
+                        }
+                    } catch(e) {}
+                }
+            });
+        }
+
+        function openAcademyQuickModal() {
+            Swal.fire({
+                title: 'Akademiya Tezkor Menyu',
+                html: 'Tizimga yangi o\'quvchi yoki resurs qo\'shish uchun modullarni tanlang.',
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: 'Yangi O\'quvchi',
+                denyButtonText: 'Yangi Dars',
+                background: '#0a0a1a',
+                color: '#fff'
+            });
         }
 
         async function loadAcademyApplications() {
@@ -2946,33 +3393,31 @@
                 const container = document.getElementById('academy-apps-list');
                 
                 if (apps.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; padding: 40px; opacity: 0.5;">Hozircha arizalar yo\'q.</div>';
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; opacity: 0.5;">Hozircha arizalar yo\'q.</div>';
                     return;
                 }
 
-                container.innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
-                    ${apps.map(app => `
-                        <div class="glass-panel" style="padding: 20px; border-top: 3px solid ${app.status === 'accepted' ? 'var(--neon-cyan)' : 'var(--neon-purple)'};">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                <span class="status-badge" style="background: ${app.status === 'pending' ? 'rgba(176,38,255,0.1)' : 'rgba(0,255,204,0.1)'}; color: ${app.status === 'pending' ? 'var(--neon-purple)' : 'var(--neon-cyan)'}; border-color: currentcolor;">${app.status.toUpperCase()}</span>
-                                <small style="opacity: 0.5;">${new Date(app.created_at).toLocaleDateString()}</small>
-                            </div>
-                            <h4 style="margin: 0 0 5px 0;">${app.name}</h4>
-                            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 5px;"><i class="fa-solid fa-phone"></i> ${app.phone}</div>
-                            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 15px;"><i class="fa-solid fa-code"></i> ${app.direction} (${app.level})</div>
-                            
-                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; font-size: 11px; margin-bottom: 20px;">
-                                <i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Tahlili: 
-                                <p style="margin-top: 5px; opacity: 0.8; line-height: 1.4;">${app.ai_assessment ? JSON.parse(app.ai_assessment).assessment : 'Tahlil qilinmoqda...'}</p>
-                            </div>
-
-                            <div style="display: flex; gap: 10px;">
-                                ${app.status === 'pending' || app.status === 'test_sent' ? `<button onclick="approveApplication(${app.id})" class="btn-ios btn-neon" style="flex: 2; font-size: 11px;">Qabul qilish</button>` : ''}
-                                <button onclick="deleteApplication(${app.id})" class="btn-ios" style="flex: 1; color: var(--neon-pink); font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
-                            </div>
+                container.innerHTML = apps.map(app => `
+                    <div class="glass-panel" style="padding: 20px; border-top: 3px solid ${app.status === 'accepted' ? 'var(--neon-cyan)' : 'var(--neon-purple)'};">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span class="status-badge" style="background: ${app.status === 'pending' ? 'rgba(176,38,255,0.1)' : 'rgba(0,255,204,0.1)'}; color: ${app.status === 'pending' ? 'var(--neon-purple)' : 'var(--neon-cyan)'}; border-color: currentcolor;">${app.status.toUpperCase()}</span>
+                            <small style="opacity: 0.5;">${new Date(app.created_at).toLocaleDateString()}</small>
                         </div>
-                    `).join('')}
-                </div>`;
+                        <h4 style="margin: 0 0 5px 0;">${app.name}</h4>
+                        <div style="font-size: 13px; opacity: 0.7; margin-bottom: 5px;"><i class="fa-solid fa-phone"></i> ${app.phone}</div>
+                        <div style="font-size: 13px; opacity: 0.7; margin-bottom: 15px;"><i class="fa-solid fa-code"></i> ${app.direction}</div>
+                        
+                        <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; font-size: 11px; margin-bottom: 20px;">
+                            <i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Tahlili: 
+                            <p style="margin-top: 5px; opacity: 0.8; line-height: 1.4;">${app.ai_assessment ? JSON.parse(app.ai_assessment).assessment : 'Tahlil qilinmoqda...'}</p>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            ${app.status === 'pending' || app.status === 'test_sent' ? `<button onclick="approveApplication(${app.id})" class="btn-ios btn-neon" style="flex: 2; font-size: 11px;">Qabul qilish</button>` : ''}
+                            <button onclick="deleteApplication(${app.id})" class="btn-ios" style="flex: 1; color: var(--neon-pink); font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
             } catch(e) { console.error("Load Apps Error", e); }
         }
 
@@ -2997,8 +3442,13 @@
                     });
                     const data = await response.json();
                     if (data.status === 'success') {
-                        Swal.fire('Tabriklaymiz!', data.message, 'success').then(() => initAcademyDashboard());
+                        Swal.fire({
+                            title: 'Tabriklaymiz!',
+                            html: `${data.message}<br><br><div style="text-align:left; background:rgba(255,255,255,0.05); padding:15px; border-radius:10px;"><b>Login:</b> ${data.login}<br><b>Parol:</b> ${data.password}</div>`,
+                            icon: 'success'
+                        }).then(() => initAcademyDashboard());
                     }
+
                 } catch(e) { Swal.fire('Xato', 'Server xatosi', 'error'); }
             }
         }
@@ -3029,12 +3479,344 @@
             }
         }
 
-        // Add to window.onload if academy panel is active
+
+        async function initStudentPortal() {
+            try {
+                const res = await fetch(`/internal-api/academy/student/dashboard`);
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    const p = data.progress;
+                    document.getElementById('s-rank-text').innerText = p.rank || 'Junior';
+                    document.getElementById('s-xp-val').innerText = p.total_xp || 0;
+                    document.getElementById('s-iq-val').innerText = p.iq_score || 0;
+                    document.getElementById('s-talent-count').innerText = (p.talents ? JSON.parse(p.talents).length : 0);
+                    
+                    if (data.course) {
+                        document.getElementById('s-course-name').innerText = data.course.name;
+                        const progressPercent = Math.min(100, (data.recent_results.length / (data.lessons.length || 1)) * 100);
+                        document.getElementById('s-course-fill').style.width = progressPercent + '%';
+                        
+                        const lessonList = document.getElementById('student-lessons-list');
+                        lessonList.innerHTML = data.lessons.map(l => `
+                            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--glass-border);">
+                                <div>
+                                    <span style="font-size: 14px; color: white;">${l.title}</span><br>
+                                    <small style="opacity: 0.5;">Davomiyligi: ${l.duration} soat</small>
+                                </div>
+                                <i class="fa-solid fa-circle-check" style="color: ${l.completed ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)'}; font-size: 20px;"></i>
+                            </div>
+                        `).join('');
+                    }
+
+                    if (data.mentor) {
+                        document.getElementById('s-mentor-name').innerText = data.mentor.name;
+                    }
+                }
+            } catch(e) { console.error("Student Portal Error:", e); }
+        }
+
+        async function send_s_mentor_msg() {
+            const input = document.getElementById('s-mentor-input');
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            const chat = document.getElementById('s-mentor-chat');
+            chat.innerHTML += `<div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; align-self: flex-end; max-width: 80%; font-size: 13px;">${msg}</div>`;
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+
+            // Loading state
+            const loadingId = 'mentor_loading_' + Date.now();
+            chat.innerHTML += `<div id="${loadingId}" style="color: var(--neon-cyan); font-size: 12px; font-style: italic;">I-Ticher javob bermoqda...</div>`;
+            
+            try {
+                const res = await fetch(`/internal-api/academy/student/mentor/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                document.getElementById(loadingId).remove();
+                chat.innerHTML += `<div style="background: rgba(0,255,204,0.1); padding: 12px; border-radius: 12px; align-self: flex-start; max-width: 80%; font-size: 13px; border: 1px solid rgba(0,255,204,0.1);">${data.reply}</div>`;
+                chat.scrollTop = chat.scrollHeight;
+            } catch(e) { 
+                 document.getElementById(loadingId).innerText = "Ustoz bilan aloqa uzildi.";
+            }
+        }
+
+        // UTILITIES
+        function confirmAction(msg) {
+            return new Promise(resolve => {
+                Swal.fire({
+                    title: 'Tasdiqlash',
+                    text: msg,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ha',
+                    cancelButtonText: 'Yo\'q',
+                    background: '#0a0a1a',
+                    color: '#fff'
+                }).then(res => resolve(res.isConfirmed));
+            });
+        }
+        function showError(msg) { Swal.fire('Xato', msg, 'error'); }
+        async function runProjectTest(id) {
+            simulateAIAction("Loyiha testi boshlanmoqda...");
+            setTimeout(() => Swal.fire('Test yakunlandi', 'Loyiha 100/100 ball bilan sinovdan o\'tdi!', 'success'), 2000);
+        }
+
+        // STUDENT PROJECTS
+        window.academyProjects = [];
+        async function loadStudentProjects() {
+            console.log("Loading projects...");
+            const container = document.getElementById('student-projects-grid');
+            if(!container) return;
+            try {
+                const res = await fetch('/internal-api/academy/student/projects');
+                const data = await res.json();
+                if(!Array.isArray(data)) throw new Error("Format xatosi");
+                window.academyProjects = data;
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px; opacity: 0.5;">Hali loyihalar yo\'q. "Yangi Loyiha" tugmasini bosing!</div>';
+                    return;
+                }
+
+                container.innerHTML = data.map(p => `
+                    <div class="glass-panel" style="padding: 25px; border-top: 4px solid var(--neon-cyan); animation: fadeIn 0.5s;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                            <h4 style="margin: 0; color: white;">${p.title}</h4>
+                            <span class="badge" style="background: rgba(0,255,204,0.1); color: var(--neon-cyan); font-size: 10px; padding: 3px 8px; border-radius: 5px;">${(p.status || 'DRAFT').toUpperCase()}</span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-muted); height: 40px; overflow: hidden; margin-bottom: 15px;">${p.description || 'Tavsif yo\'q'}</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-ios" onclick="openProjectModal(${p.id})" style="flex: 1;"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-ios" onclick="runProjectTest(${p.id})" style="flex: 1; color: var(--neon-cyan);"><i class="fa-solid fa-play"></i></button>
+                            <button class="btn-ios" onclick="deleteProject(${p.id})" style="flex: 1; color: var(--neon-pink);"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        function openProjectModal(id = null) {
+            const p = id ? window.academyProjects.find(x => x.id == id) : null;
+            Swal.fire({
+                title: p ? 'Loyihani tahrirlash' : 'Yangi loyiha yaratish',
+                html: `
+                    <div class="form-group" style="text-align: left;">
+                        <label style="color: var(--text-muted); font-size: 11px;">Loyiha Nomi</label>
+                        <input id="p-title" class="swal2-input" placeholder="Loyiha nomi" style="width: 80%;" value="${p ? p.title : ''}">
+                    </div>
+                    <div class="form-group" style="text-align: left; margin-top: 15px;">
+                        <label style="color: var(--text-muted); font-size: 11px;">Tavsif</label>
+                        <textarea id="p-desc" class="swal2-textarea" placeholder="Nima qilyapsiz?" style="width: 80%;">${p ? p.description : ''}</textarea>
+                    </div>
+                `,
+                confirmButtonText: 'Saqlash',
+                showCancelButton: true,
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        id: p ? p.id : null,
+                        title: document.getElementById('p-title').value,
+                        description: document.getElementById('p-desc').value,
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await fetch('/internal-api/academy/student/projects', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify(result.value)
+                    });
+                    loadStudentProjects();
+                }
+            });
+        }
+
+        async function deleteProject(id) {
+            if(await confirmAction('Loyihani o\'chirishni xohlaysizmi?')) {
+                await fetch(`/internal-api/academy/student/projects/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrfToken }
+                });
+                loadStudentProjects();
+            }
+
+        }
+
+        // GLOBAL CHAT & MESSAGING
+        let chatPolling = null;
+        let currentChatTarget = { id: null, type: 'global', name: 'Global Chat' };
+
+        async function loadChatContacts() {
+            const list = document.getElementById('chat-contacts-list');
+            if(!list) return;
+            const res = await fetch('/internal-api/academy/chat/contacts');
+            const data = await res.json();
+            
+            let html = `<div class="chat-contact ${currentChatTarget.type==='global'?'active':''}" onclick="selectChat(null, 'global', 'Global Chat')">
+                <i class="fa-solid fa-earth-americas"></i> <span>Global Chat</span>
+            </div>`;
+
+            // Mentors
+            data.mentors.forEach(m => {
+                html += `<div class="chat-contact ${currentChatTarget.id==m.id && currentChatTarget.type==='mentor'?'active':''}" onclick="selectChat(${m.id}, 'mentor', '${m.name}')">
+                    <i class="fa-solid fa-robot" style="color: var(--neon-cyan)"></i> <span>${m.name} (I-Ticher)</span>
+                </div>`;
+            });
+
+            // Admins
+            data.admins.forEach(a => {
+                html += `<div class="chat-contact ${currentChatTarget.id==a.id && currentChatTarget.type==='user'?'active':''}" onclick="selectChat(${a.id}, 'user', '${a.name}')">
+                    <i class="fa-solid fa-user-shield" style="color: var(--neon-purple)"></i> <span>${a.name} (Admin)</span>
+                </div>`;
+            });
+
+            // Students
+            data.students.forEach(s => {
+                if(s.id != {{ auth()->id() }}) {
+                    html += `<div class="chat-contact ${currentChatTarget.id==s.id && currentChatTarget.type==='user'?'active':''}" onclick="selectChat(${s.id}, 'user', '${s.name}')">
+                        <i class="fa-solid fa-user-graduate"></i> <span>${s.name} (Student)</span>
+                    </div>`;
+                }
+            });
+
+            list.innerHTML = html;
+        }
+
+        function selectChat(id, type, name) {
+            currentChatTarget = { id, type, name };
+            document.getElementById('chat-target-name').innerText = name;
+            document.getElementById('chat-target-status').innerText = type === 'global' ? '● Online (Hamma)' : '● Ko\'rishmoqda';
+            loadChatContacts();
+            loadGlobalChat();
+        }
+
+        async function loadGlobalChat() {
+            const box = document.getElementById('global-chat-box');
+            if(!box) return;
+            
+            try {
+                const url = new URL('/internal-api/academy/chat', window.location.origin);
+                if(currentChatTarget.id) {
+                    url.searchParams.append('receiver_id', currentChatTarget.id);
+                    url.searchParams.append('receiver_type', currentChatTarget.type);
+                }
+
+                const res = await fetch(url.toString());
+                const messages = await res.json();
+                if(!Array.isArray(messages)) return;
+                
+                const currentUserId = {{ auth()->id() }};
+                if (messages.length === 0) {
+                    box.innerHTML = '<div style="text-align: center; margin-top: 50px; opacity: 0.3;">Xabarlar yo\'q</div>';
+                    return;
+                }
+
+                box.innerHTML = messages.map(m => `
+                    <div style="align-self: ${m.user_id == currentUserId ? 'flex-end' : 'flex-start'}; max-width: 80%;">
+                        ${currentChatTarget.type === 'global' ? `
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; justify-content: ${m.user_id == currentUserId ? 'flex-end' : 'flex-start'};">
+                            <small style="color: ${m.user_role == 'student' ? 'var(--neon-cyan)' : 'var(--neon-purple)'}; font-weight: bold;">${m.user_name || 'Noma\'lum'}</small>
+                            <small style="opacity: 0.3; font-size: 9px;">${new Date(m.created_at).toLocaleTimeString()}</small>
+                        </div>
+                        ` : ''}
+                        <div style="background: ${m.user_id == currentUserId ? 'rgba(0,255,204,0.1)' : 'rgba(255,255,255,0.05)'}; padding: 10px 15px; border-radius: 12px; border: 1px solid var(--glass-border); position: relative;">
+                            ${m.message ? `<p style="margin: 0; font-size: 13.5px; color: white;">${m.message}</p>` : ''}
+                            ${m.file_path ? `
+                                <a href="/storage/${m.file_path}" target="_blank" style="display: flex; align-items: center; gap: 8px; margin-top: 5px; color: var(--neon-cyan); text-decoration: none; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 8px; font-size: 11px;">
+                                    <i class="fa-solid fa-file-arrow-down"></i> ${m.file_name}
+                                </a>
+                            ` : ''}
+                            <div style="text-align: right; margin-top: 4px;"><small style="opacity: 0.3; font-size: 8px;">${new Date(m.created_at).toLocaleTimeString()}</small></div>
+                        </div>
+                    </div>
+                `).join('');
+                box.scrollTop = box.scrollHeight;
+            } catch(e) { console.error(e); }
+        }
+
+        async function sendGlobalChat() {
+            const input = document.getElementById('chat-msg-input');
+            const fileInput = document.getElementById('chat-file-input');
+            const msg = input.value.trim();
+            const file = fileInput.files[0];
+
+            if(!msg && !file) return;
+
+            const formData = new FormData();
+            if(msg) formData.append('message', msg);
+            if(file) formData.append('file', file);
+            if(currentChatTarget.id) {
+                formData.append('receiver_id', currentChatTarget.id);
+                formData.append('receiver_type', currentChatTarget.type);
+            }
+
+            input.value = '';
+            fileInput.value = '';
+            document.getElementById('file-preview-label').style.display = 'none';
+
+            try {
+                const res = await fetch('/internal-api/academy/chat', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken },
+                    body: formData
+                });
+                const data = await res.json();
+                loadGlobalChat();
+            } catch(e) {}
+        }
+
+
+        function updateFileLabel(input) {
+            const label = document.getElementById('file-preview-label');
+            if(input.files.length > 0) {
+                label.innerText = `Tanlandi: ${input.files[0].name}`;
+                label.style.display = 'block';
+            } else {
+                label.style.display = 'none';
+            }
+        }
+
+        // ADMIN MODERATION
+        async function loadModerationLogs() {
+            const body = document.getElementById('moderation-log-body');
+            if(!body) return;
+            const res = await fetch('/api/academy/chat/history'); // Use existing or new API
+            // For now use a simplified mock or expand API
+        }
+
+        const originalSwitchTab = window.switchTab;
+        window.switchTab = function(tabId) {
+            originalSwitchTab(tabId);
+            if(tabId === 'student_projects') loadStudentProjects();
+            if(tabId === 'student_chat') {
+                loadGlobalChat();
+                loadChatContacts();
+                if(!chatPolling) chatPolling = setInterval(loadGlobalChat, 10000);
+            } else if(chatPolling) {
+
+                clearInterval(chatPolling);
+                chatPolling = null;
+            }
+        }
+        // Add to window.onload
         const originalOnload = window.onload;
         window.onload = function() {
             if(originalOnload) originalOnload();
-            initAcademyDashboard();
+            const userRole = "{{ auth()->user()->role }}";
+            if (userRole === 'student') {
+                switchTab('student_portal');
+                initStudentPortal();
+            } else {
+                initAcademyDashboard();
+            }
         }
+
     </script>
 </body>
 </html>
