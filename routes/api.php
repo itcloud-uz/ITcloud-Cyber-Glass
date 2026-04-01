@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\AiProjectController;
 use App\Http\Controllers\Api\TemplateController;
 use App\Http\Controllers\Api\TelegramBotController;
+use App\Http\Controllers\Api\ClickController;
 use App\Http\Controllers\Api\AiChatController;
 use App\Http\Controllers\Api\AcademyController;
 use App\Models\PriceService;
@@ -60,7 +61,7 @@ Route::patch('/leads/{id}/status', function(Request $request, $id) {
 });
 
 // Employees
-Route::apiResource('employees', EmployeeController::class)->except(['index', 'show']);
+Route::apiResource('employees', EmployeeController::class)->except(['show']);
 Route::post('/auth/verify-master', [EmployeeController::class, 'verifyMaster']);
 
 // Projects
@@ -114,17 +115,34 @@ Route::get('/academy/mentors', [AcademyController::class, 'getMentors']);
 Route::post('/academy/mentors', [AcademyController::class, 'storeMentor']);
 Route::get('/academy/students', [AcademyController::class, 'getStudents']);
 Route::put('/academy/students/{id}/profile', [AcademyController::class, 'updateStudentProfile']);
+Route::get('/academy/students/{id}/payments', [AcademyController::class, 'getStudentPayments']);
+Route::get('/academy/students/{id}/enrollments', [AcademyController::class, 'getStudentEnrollments']);
+Route::get('/academy/students/{id}/analytics', [AcademyController::class, 'getStudentAnalytics']);
+Route::post('/academy/enroll', [AcademyController::class, 'enrollStudent']);
+Route::post('/academy/enroll/{id}/extend', [AcademyController::class, 'extendCourse']);
+Route::post('/academy/payments', [AcademyController::class, 'recordPayment']);
+Route::get('/academy/achievements', [AcademyController::class, 'getAchievements']);
+Route::post('/academy/achievements', [AcademyController::class, 'storeAchievement']);
+Route::delete('/academy/achievements/{id}', [AcademyController::class, 'deleteAchievement']);
+Route::get('/academy/jobs', [AcademyController::class, 'getJobs']);
+Route::post('/academy/jobs', [AcademyController::class, 'storeJob']);
+Route::delete('/academy/jobs/{id}', [AcademyController::class, 'deleteJob']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/academy/student/dashboard', [AcademyController::class, 'getStudentDashboard']);
     Route::post('/academy/student/mentor/chat', [AcademyController::class, 'mentorChat']);
+    Route::get('/academy/user/achievements', [AcademyController::class, 'getUserAchievements']);
 });
 
+Route::get('/academy/dashboard', [AcademyController::class, 'getStudentDashboard']);
+Route::post('/academy/lesson', [AcademyController::class, 'generateLesson']);
+Route::post('/academy/sandbox', [AcademyController::class, 'submitSandbox']);
+Route::post('/academy/task/submit', [AcademyController::class, 'submitTask']);
+Route::post('/academy/payments/click/initiate', [AcademyController::class, 'initiateClickPayment']);
 
+// Click Payment Integration
+Route::post('/payment/click', [ClickController::class, 'handle']);
 
-Route::middleware('auth:sanctum')->group(function() {
-    Route::get('/academy/dashboard', [AcademyController::class, 'getStudentDashboard']);
-    Route::post('/academy/lesson', [AcademyController::class, 'generateLesson']);
-    Route::post('/academy/sandbox', [AcademyController::class, 'submitSandbox']);
-    Route::post('/academy/task/submit', [AcademyController::class, 'submitTask']);
-});
+Route::post('/academy/jobs/{id}/apply', [AcademyController::class, 'applyJob']);
+Route::get('/academy/certificates', [AcademyController::class, 'getCertificates']);
+Route::post('/academy/certificates/generate', [AcademyController::class, 'generateCertificate']);

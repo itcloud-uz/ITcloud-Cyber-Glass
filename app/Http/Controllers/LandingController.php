@@ -16,6 +16,11 @@ class LandingController extends Controller
         return view('landing', compact('templates', 'newestTemplate', 'priceServices'));
     }
 
+    public function academy()
+    {
+        return view('academy.landing');
+    }
+
     public function constructor()
     {
         $templates = Template::all();

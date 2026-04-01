@@ -31,7 +31,7 @@ class GeminiAgentService
             }
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$this->apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
         
         $tools = [
             ['name' => 'get_system_overview', 'description' => 'Tizimdagi umumiy holatni ko\'rish (Loyihalar, Leadlar, Botlar soni).'],
@@ -232,7 +232,7 @@ class GeminiAgentService
     {
         if (empty($this->apiKey)) return "Xatolik: API Key.";
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$this->apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
         
         $payload = [
             'contents' => [

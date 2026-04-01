@@ -10,8 +10,17 @@ use App\Models\Tenant;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+use App\Services\SupervisorAiService;
+
 class AnalyticsController extends Controller
 {
+    protected $supervisor;
+
+    public function __construct(SupervisorAiService $supervisor)
+    {
+        $this->supervisor = $supervisor;
+    }
+
     public function dashboardData()
     {
         // 1. Revenue last 6 months
@@ -43,11 +52,15 @@ class AnalyticsController extends Controller
             'total_revenue' => Subscription::sum('amount_paid')
         ];
 
+        // 4. Supervisor AI Health Analysis
+        $supervisorReport = $this->supervisor->generateSystemReport();
+
         return response()->json([
             'revenue' => $revenueData,
             'leads' => $leadsData,
             'stats' => $stats,
-            'months' => $this->getLastSixMonths()
+            'months' => $this->getLastSixMonths(),
+            'supervisor_report' => $supervisorReport
         ]);
     }
 

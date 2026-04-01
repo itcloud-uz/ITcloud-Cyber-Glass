@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AcademyController extends Controller
 {
@@ -39,13 +40,21 @@ class AcademyController extends Controller
         $lessons = $courseId ? DB::table('academy_lessons')->where('course_id', $courseId)->orderBy('order')->get() : [];
         $recent_results = DB::table('academy_results')->where('user_id', $user->id)->orderBy('created_at', 'desc')->take(10)->get();
 
+        // To'lov holati
+        $payment = DB::table('academy_payments')
+            ->where('user_id', $user->id)
+            ->where('course_id', $courseId)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
         return response()->json([
             'status' => 'success',
             'progress' => $progress,
             'course' => $course,
             'mentor' => $mentor,
             'lessons' => $lessons,
-            'recent_results' => $recent_results
+            'recent_results' => $recent_results,
+            'payment' => $payment
         ]);
     }
 
@@ -193,34 +202,6 @@ class AcademyController extends Controller
     }
 
 
-
-
-    public function mentorChat(Request $request)
-    {
-        $user = auth()->user();
-        $message = $request->input('message');
-        
-        $progress = DB::table('academy_progress')->where('user_id', $user->id)->first();
-        $courseId = $progress->course_id ?? null;
-        $course = $courseId ? DB::table('academy_courses')->find($courseId) : null;
-        $mentor = $course ? DB::table('academy_mentors')->find($course->mentor_id ?? 0) : null;
-
-        $systemPrompt = $mentor->system_prompt ?? "Sen ITcloud Academy shaxsiy AI ustozi - I-Tichersan. O'quvchiga kurs materiallari bo'yicha yordam ber.";
-        $courseInfo = $course ? "Hozirgi kurs: {$course->name}." : "";
-        
-        $prompt = "{$systemPrompt}\n{$courseInfo}\nO'quvchi ismi: {$user->name}. Savol: {$message}";
-
-        try {
-            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={$this->geminiKey}", [
-                'contents' => [['parts' => [['text' => $prompt]]]]
-            ]);
-
-            $reply = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? "Kechirasiz, hozir javob bera olmayman.";
-            return response()->json(['status' => 'success', 'reply' => $reply]);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-        }
-    }
     public function apply(Request $request)
     {
         $request->validate([
@@ -239,6 +220,10 @@ class AcademyController extends Controller
             'location' => $request->location,
             'direction' => $request->direction,
             'level' => $request->level,
+            'passport_series' => $request->passport_series,
+            'passport_number' => $request->passport_number,
+            'jshir' => $request->jshir,
+            'address' => $request->address,
             'status' => 'pending',
             'access_token' => $token,
             'created_at' => now(),
@@ -271,24 +256,42 @@ class AcademyController extends Controller
         $prompt = "Talaba arizasini tahlil qil va uning salohiyatini bahola. Ismi: {$app->name}, Yo'nalish: {$app->direction}, Daraja: {$app->level}. Uning uchun kichik mantiqiy test savoli tayyorla va ruxsat berish haqida tavsiya ber. Javobni JSON formatida qaytar: {assessment: string, status: 'accepted'|'rejected', logic_test: string}";
 
         try {
-            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={$this->geminiKey}", [
+            $response = Http::timeout(30)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->geminiKey}", [
                 'contents' => [['parts' => [['text' => $prompt]]]]
             ]);
 
-            $aiResult = $response->json()['candidates'][0]['content']['parts'][0]['text'];
+            $data = $response->json();
+            if(!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                throw new \Exception("AI tahlil natijasi topilmadi. Response: " . substr($response->body(), 0, 500));
+            }
+
+            $aiResult = $data['candidates'][0]['content']['parts'][0]['text'];
             // Tozalash va saqlash
             $cleanedJson = preg_replace('/```json|```/', '', $aiResult);
             
             DB::table('academy_applications')->where('id', $appId)->update([
-                'ai_assessment' => $cleanedJson,
+                'ai_assessment' => trim($cleanedJson),
                 'status' => 'test_sent'
             ]);
 
-            // Email yuborish (Muvaffaqiyatli qabul)
-            Mail::to($app->email)->send(new \App\Mail\AcademyWelcome($app));
+            // Email yuborish (Muvaffaqiyatli tahlil)
+            try {
+                Mail::to($app->email)->send(new \App\Mail\AcademyWelcome($app));
+            } catch (\Exception $me) {
+                \Log::error("Academy Mail Error: " . $me->getMessage());
+            }
             
         } catch (\Exception $e) {
             \Log::error("Academy AI Error: " . $e->getMessage());
+            // Fallback assessment so UI is not stuck
+            DB::table('academy_applications')->where('id', $appId)->update([
+                'ai_assessment' => json_encode([
+                    'assessment' => 'Tavsiya: AI agent vaqtinchalik javob bera olmadi, ammo talaba ma\'lumotlari to\'liq. Manual suhbat tavsiya etiladi.',
+                    'status' => 'accepted',
+                    'logic_test' => 'Tizimda texnik nosozlik tufayli test generatsiya qilinmadi.'
+                ]),
+                'status' => 'pending'
+            ]);
         }
     }
 
@@ -344,7 +347,10 @@ class AcademyController extends Controller
                 'name' => $app->name,
                 'password' => \Illuminate\Support\Facades\Hash::make($password),
                 'role' => 'student',
-                'phone' => $app->phone
+                'phone' => $app->phone,
+                'passport_number' => $app->passport_series . $app->passport_number,
+                'jshir' => $app->jshir,
+                'address' => $app->address
             ]
         );
 
@@ -408,7 +414,7 @@ class AcademyController extends Controller
         $prompt = "Sen 'I-Ticher' AI o'qituvchisisan. Talaba ismi: {$student->name}. Uning joriy XP: {$student->total_xp}. Unga navbatdagi dars mavzusi, tushuntirish va 3 ta savolli test tayyorla. Javobni chiroyli Markdown formatida qaytar.";
 
         try {
-            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={$this->geminiKey}", [
+            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->geminiKey}", [
                 'contents' => [['parts' => [['text' => $prompt]]]]
             ]);
             $lessonContent = $response->json()['candidates'][0]['content']['parts'][0]['text'];
@@ -434,7 +440,7 @@ class AcademyController extends Controller
         $systemPrompt = $mentor->system_prompt ?? ($mentor->instructions . "\n" . $defaultPrompt);
 
         try {
-            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={$apiKey}", [
+            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}", [
                 'contents' => [
                     ['role' => 'user', 'parts' => [['text' => "Yo'riqnoma: " . $systemPrompt]]],
                     ['role' => 'user', 'parts' => [['text' => $msg]]]
@@ -448,19 +454,19 @@ class AcademyController extends Controller
         }
     }
 
-    public function getAcademyMentors()
+    public function getMentors()
     {
         return response()->json(DB::table('academy_mentors')->get());
     }
 
-    public function saveAcademyMentor(Request $request)
+    public function storeMentor(Request $request)
     {
         $id = $request->input('id');
         $data = [
             'name' => $request->input('name'),
             'gemini_api_key' => $request->input('gemini_api_key'),
-            'instructions' => $request->input('instructions'), // General desc
-            'system_prompt' => $request->input('system_prompt'), // Detailed rules
+            'instructions' => $request->input('instructions') ?? '', // Restore if needed
+            'system_prompt' => $request->input('system_prompt'),
             'updated_at' => now()
         ];
         if ($id) {
@@ -481,7 +487,7 @@ class AcademyController extends Controller
         // AI Security Check
         $prompt = "Ushbu kodni havsizlik bo'yicha tahlil qil. Agar zararli bo'lsa 'blocked', shubhali bo'lsa 'risky', havfsiz bo'lsa 'safe' deb javob ber. Faqat bitta so'z yoz. Kod: " . $request->code;
         
-        $aiRes = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={$this->geminiKey}", [
+        $aiRes = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->geminiKey}", [
             'contents' => [['parts' => [['text' => $prompt]]]]
         ])->json();
 
@@ -533,27 +539,12 @@ class AcademyController extends Controller
             'title' => 'required',
             'description' => 'required',
             'mentor_id' => 'nullable|exists:academy_mentors,id',
+            'price' => 'nullable|numeric',
+            'monthly_fee' => 'nullable|numeric',
             'is_published' => 'boolean'
         ]);
 
         $id = DB::table('academy_courses')->insertGetId(array_merge($data, ['created_at' => now(), 'updated_at' => now()]));
-        return response()->json(['status' => 'success', 'id' => $id]);
-    }
-
-    public function getMentors()
-    {
-        $mentors = DB::table('academy_mentors')->get();
-        return response()->json($mentors);
-    }
-
-    public function storeMentor(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required',
-            'instructions' => 'required'
-        ]);
-
-        $id = DB::table('academy_mentors')->insertGetId(array_merge($data, ['created_at' => now(), 'updated_at' => now()]));
         return response()->json(['status' => 'success', 'id' => $id]);
     }
 
@@ -569,11 +560,31 @@ class AcademyController extends Controller
     public function updateStudentProfile(Request $request, $id)
     {
         $data = $request->validate([
+            'name' => 'nullable|string',
+            'email' => 'nullable|email|unique:users,email,' . $id,
+            'password' => 'nullable|min:6',
+            'address' => 'nullable|string',
+            'jshir' => 'nullable|string',
+            'passport_number' => 'nullable|string',
             'talents' => 'nullable|array',
             'rank' => 'nullable|string',
             'study_status' => 'nullable|string'
         ]);
 
+        // Update User
+        $userUpdate = [];
+        if (isset($data['name'])) $userUpdate['name'] = $data['name'];
+        if (isset($data['email'])) $userUpdate['email'] = $data['email'];
+        if (isset($data['address'])) $userUpdate['address'] = $data['address'];
+        if (isset($data['jshir'])) $userUpdate['jshir'] = $data['jshir'];
+        if (isset($data['passport_number'])) $userUpdate['passport_number'] = $data['passport_number'];
+        if (!empty($data['password'])) $userUpdate['password'] = bcrypt($data['password']);
+
+        if (!empty($userUpdate)) {
+            DB::table('users')->where('id', $id)->update($userUpdate);
+        }
+
+        // Update Progress
         DB::table('academy_progress')->where('user_id', $id)->update([
             'talents' => isset($data['talents']) ? json_encode($data['talents']) : null,
             'rank' => $data['rank'] ?? 'Junior',
@@ -582,5 +593,289 @@ class AcademyController extends Controller
         ]);
 
         return response()->json(['status' => 'success']);
+    }
+    public function recordPayment(Request $request)
+    {
+        DB::table('academy_payments')->insert([
+            'user_id' => $request->user_id,
+            'course_id' => $request->course_id,
+            'amount' => $request->amount,
+            'payment_method' => $request->payment_method ?? 'cash',
+            'details' => $request->details,
+            'status' => 'completed',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        return response()->json(['status' => 'success']);
+    }
+
+    public function initiateClickPayment(Request $request)
+    {
+        $user = auth()->user();
+        $courseId = $request->input('course_id');
+        $course = DB::table('academy_courses')->find($courseId);
+        if (!$course) return response()->json(['status' => 'error', 'message' => 'Kurs topilmadi.'], 404);
+
+        $amount = $course->price;
+        if ($amount <= 0) return response()->json(['status' => 'error', 'message' => 'Kurs narxi xato.'], 400);
+
+        $paymentId = DB::table('academy_payments')->insertGetId([
+            'user_id' => $user->id,
+            'course_id' => $courseId,
+            'amount' => $amount,
+            'payment_method' => 'click',
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        $click = new ClickController();
+        $payUrl = $click->generateLink($paymentId);
+
+        return response()->json(['status' => 'success', 'payment_url' => $payUrl]);
+    }
+
+    public function getStudentPayments($id)
+    {
+        $payments = DB::table('academy_payments')
+            ->leftJoin('academy_courses', 'academy_payments.course_id', '=', 'academy_courses.id')
+            ->select('academy_payments.*', 'academy_courses.title as course_title')
+            ->where('academy_payments.user_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return response()->json($payments);
+    }
+
+    public function enrollStudent(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'course_id' => 'required|exists:academy_courses,id',
+            'duration_months' => 'nullable|integer'
+        ]);
+
+        $enrolledAt = now();
+        $months = (int)($request->duration_months ?? 3);
+        $expiresAt = now()->addMonths($months);
+
+        DB::table('academy_enrollments')->insert([
+            'user_id' => $request->user_id,
+            'course_id' => $request->course_id,
+            'status' => 'active',
+            'enrolled_at' => $enrolledAt,
+            'expires_at' => $expiresAt,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function extendCourse(Request $request, $id)
+    {
+        $days = $request->input('days', 30);
+        $enrollment = DB::table('academy_enrollments')->where('id', $id)->first();
+        if (!$enrollment) return response()->json(['status' => 'error', 'message' => 'Enrollment not found'], 404);
+
+        $currentExpires = Carbon::parse($enrollment->expires_at)->isPast() ? now() : Carbon::parse($enrollment->expires_at);
+        $newExpires = $currentExpires->addDays($days);
+
+        DB::table('academy_enrollments')->where('id', $id)->update([
+            'expires_at' => $newExpires,
+            'status' => 'extended',
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    public function getStudentEnrollments($id)
+    {
+        $enrolls = DB::table('academy_enrollments')
+            ->join('academy_courses', 'academy_enrollments.course_id', '=', 'academy_courses.id')
+            ->select('academy_enrollments.*', 'academy_courses.title as course_title')
+            ->where('academy_enrollments.user_id', $id)
+            ->get();
+        return response()->json($enrolls);
+    }
+
+    public function getStudentAnalytics($id)
+    {
+        $user = DB::table('users')->find($id);
+        if (!$user) return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+
+        $progress = DB::table('academy_progress')->where('user_id', $id)->first();
+        $enrollments = DB::table('academy_enrollments')
+            ->join('academy_courses', 'academy_enrollments.course_id', '=', 'academy_courses.id')
+            ->select('academy_enrollments.*', 'academy_courses.title as course_title')
+            ->where('academy_enrollments.user_id', $id)
+            ->get();
+        
+        $totalPaid = DB::table('academy_payments')->where('user_id', $id)->sum('amount');
+        $chatActivity = DB::table('academy_global_chat')->where('user_id', $id)->count();
+
+        // AI Summary Analysis
+        $aiPrompt = "Talabaning o'quv natijalari asosida uning kuchli tomonlarini tahlil qil. Ma'lumotlar: XP: " . ($progress->total_xp ?? 0) . ", IQ: " . ($progress->iq_score ?? 0) . ", Xabar soni: $chatActivity. Javobingni qisqa (3 gap) va dalda beruvchi ohangda Uzbek tilida yoz.";
+        
+        $aiSummary = "Tahlil qilinmoqda...";
+        try {
+            $response = Http::timeout(10)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->geminiKey}", [
+                'contents' => [['parts' => [['text' => $aiPrompt]]]]
+            ])->json();
+            $aiSummary = $response['candidates'][0]['content']['parts'][0]['text'] ?? "Tahlil imkonsiz bo'ldi.";
+        } catch(\Exception $e) {
+            $aiSummary = "Talaba faolligi yaxshi, o'qishda davom etishi tavsiya etiladi.";
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'rank' => $progress->rank ?? 'Junior',
+                'xp' => $progress->total_xp ?? 0,
+                'ai_analysis' => $aiSummary
+            ],
+            'stats' => [
+                'total_paid' => $totalPaid,
+                'chat_activity' => $chatActivity,
+                'active_courses' => $enrollments->where('status', 'active')->count()
+            ],
+            'enrollments' => $enrollments
+        ]);
+    }
+
+    // --- PRO FEATURES IMPLEMENTATION ---
+
+    public function getAchievements()
+    {
+        return response()->json(DB::table('academy_achievements')->get());
+    }
+
+    public function storeAchievement(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string',
+            'description' => 'required|string',
+            'icon' => 'required|string',
+            'points' => 'required|integer'
+        ]);
+        $data['created_at'] = now();
+        $data['updated_at'] = now();
+        DB::table('academy_achievements')->insert($data);
+        return response()->json(['status' => 'success']);
+    }
+
+    public function deleteAchievement($id)
+    {
+        DB::table('academy_achievements')->where('id', $id)->delete();
+        return response()->json(['status' => 'success']);
+    }
+
+    public function getUserAchievements()
+    {
+        $user = auth()->user();
+        $achievements = DB::table('academy_user_achievements')
+            ->join('academy_achievements', 'academy_user_achievements.achievement_id', '=', 'academy_achievements.id')
+            ->where('academy_user_achievements.user_id', $user->id)
+            ->select('academy_achievements.*', 'academy_user_achievements.created_at as awarded_at')
+            ->get();
+        return response()->json($achievements);
+    }
+
+    public function getJobs()
+    {
+        $jobs = DB::table('academy_jobs')->where('is_active', true)->orderBy('created_at', 'desc')->get();
+        return response()->json($jobs);
+    }
+
+    public function storeJob(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string',
+            'company_name' => 'required|string',
+            'description' => 'required|string',
+            'location' => 'required|string',
+            'salary_range_min' => 'nullable|integer',
+            'salary_range_max' => 'nullable|integer',
+            'is_active' => 'boolean'
+        ]);
+        $data['created_at'] = now();
+        $data['updated_at'] = now();
+        DB::table('academy_jobs')->insert($data);
+        return response()->json(['status' => 'success']);
+    }
+
+    public function deleteJob($id)
+    {
+        DB::table('academy_jobs')->where('id', $id)->delete();
+        return response()->json(['status' => 'success']);
+    }
+
+    public function applyJob(Request $request, $id)
+    {
+        $user = auth()->user();
+        
+        // Check if student is career ready
+        $progress = DB::table('academy_progress')->where('user_id', $user->id)->first();
+        if (!$progress || !$progress->is_career_ready) {
+            return response()->json(['status' => 'error', 'message' => 'Siz hali Karyeraga tayyor emassiz! Kurslarni yakunlang.'], 403);
+        }
+
+        // Already applied?
+        $existing = DB::table('academy_job_applications')->where('job_id', $id)->where('user_id', $user->id)->first();
+        if ($existing) return response()->json(['status' => 'error', 'message' => 'Siz allaqachon ariza topshirgansiz.'], 400);
+
+        // AI Resume Summary (Brief simulation)
+        $summary = "Talaba {$user->name}, Rank: {$progress->rank}, XP: {$progress->total_xp}. Top o'quvchi.";
+
+        DB::table('academy_job_applications')->insert([
+            'job_id' => $id,
+            'user_id' => $user->id,
+            'status' => 'applied',
+            'ai_resume_summary' => $summary,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Ariza muvaffaqiyatli yuborildi! TEz orada bog\'lanamiz.']);
+    }
+
+    public function getCertificates()
+    {
+        $user = auth()->user();
+        $certs = DB::table('academy_certificates')
+            ->join('academy_courses', 'academy_certificates.course_id', '=', 'academy_courses.id')
+            ->where('academy_certificates.user_id', $user->id)
+            ->select('academy_certificates.*', 'academy_courses.title as course_title')
+            ->get();
+        return response()->json($certs);
+    }
+
+    public function generateCertificate(Request $request)
+    {
+        $request->validate(['course_id' => 'required|exists:academy_courses,id']);
+        $user = auth()->user();
+        
+        // Simulation: only allow if 100% finished
+        $progress = DB::table('academy_progress')->where('user_id', $user->id)->first();
+        if (!$progress || $progress->total_xp < 5000) {
+            return response()->json(['status' => 'error', 'message' => 'Sertifikat olish uchun yetarli XP yig\'ilmagan (Min 5000 XP)'], 400);
+        }
+
+        $certNo = 'ITC-' . strtoupper(Str::random(8)) . '-' . date('Y');
+        $token = Str::uuid();
+
+        $id = DB::table('academy_certificates')->insertGetId([
+            'user_id' => $user->id,
+            'course_id' => $request->course_id,
+            'certificate_no' => $certNo,
+            'verify_token' => $token,
+            'issued_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['status' => 'success', 'certificate_no' => $certNo, 'id' => $id]);
     }
 }

@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
+    public function index(Request $request)
+    {
+        $role = $request->query('role');
+        $users = User::when($role, function($q) use($role) {
+            return $q->where('role', $role);
+        })->get();
+        return response()->json($users);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

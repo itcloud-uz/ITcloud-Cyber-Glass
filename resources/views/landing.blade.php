@@ -135,7 +135,14 @@
         /* Mouse Magic Wand Canvas */
         #magicCursor { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; }
 
-        @media (max-width: 1024px) { .nav-links { display: none; } .hero h1 { font-size: 52px; } .grid, .contact-container { grid-template-columns: 1fr; } }
+        @media (max-width: 1024px) { 
+            .nav-links { display: none; } 
+            .hero h1 { font-size: 52px; } 
+            .grid, .contact-container, .grid-responsive { grid-template-columns: 1fr !important; } 
+            nav { padding: 15px 5%; }
+            .btn-neon { padding: 15px 25px; font-size: 15px; }
+            section { padding: 80px 5%; }
+        }
     </style>
 </head>
 <body>
@@ -156,15 +163,21 @@
             <a href="#calc">{{ __('Calculator') }}</a>
             <a href="#contact">Contact</a>
         </div>
-        <div class="lang-switch">
-            <a href="{{ route('lang.switch', 'uz') }}" class="{{ App::getLocale() == 'uz' ? 'active' : '' }}" title="O'zbek">UZ</a>
-            <a href="{{ route('lang.switch', 'tr') }}" class="{{ App::getLocale() == 'tr' ? 'active' : '' }}" title="Türkçe">TR</a>
-            <a href="{{ route('lang.switch', 'ru') }}" class="{{ App::getLocale() == 'ru' ? 'active' : '' }}" title="Русский">RU</a>
-            <a href="{{ route('lang.switch', 'en') }}" class="{{ App::getLocale() == 'en' ? 'active' : '' }}" title="English">EN</a>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div class="lang-switch">
+                <a href="{{ route('lang.switch', 'uz') }}" class="{{ App::getLocale() == 'uz' ? 'active' : '' }}" title="O'zbek">UZ</a>
+                <a href="{{ route('lang.switch', 'ru') }}" class="{{ App::getLocale() == 'ru' ? 'active' : '' }}" title="Русский">RU</a>
+                <a href="{{ route('lang.switch', 'en') }}" class="{{ App::getLocale() == 'en' ? 'active' : '' }}" title="English">EN</a>
+            </div>
+
+            <div style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--glass-border); display: flex; align-items: center; justify-content: center; background: var(--glass-bg); cursor: pointer; transition: 0.4s; color: white;" onclick="location.href='{{ route('login') }}'" title="{{ __('Personal Cabinet') }}">
+                <i class="fa-solid fa-user-astronaut" style="font-size: 20px;"></i>
+            </div>
+            
+            <a href="{{ route('client.login') }}" class="btn-neon" style="padding: 12px 25px; font-size: 14px; border-radius: 12px;">
+                <i class="fa-solid fa-user-gear"></i> {{ __('Client Portal') }}
+            </a>
         </div>
-        <a href="{{ route('client.login') }}" class="btn-neon" style="padding: 12px 25px; font-size: 14px; border-radius: 12px; margin-left: 30px;">
-            <i class="fa-solid fa-user-gear"></i> {{ __('Client Portal') }}
-        </a>
     </nav>
 
     <!-- Section 1: Hero -->
@@ -254,7 +267,7 @@
             <p>{{ __('Passwords are in the past. Protect your business through human face recognition system.') }}</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;">
+        <div class="grid-responsive" style="display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;">
             <div class="face-scan-box">
                 <div class="face-inner">
                     <div class="scan-line"></div>
@@ -282,7 +295,7 @@
         </div>
 
         <div class="calculator-card">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+            <div class="grid-responsive" style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
                 <div>
                     <h4 style="margin-bottom: 20px; color: var(--text-muted); text-transform: uppercase; font-size: 12px;">1. {{ __('Select Modules') }}</h4>
                     @foreach($priceServices as $ps)
@@ -359,77 +372,22 @@
         </div>
     </section>
 
-    <!-- ITcloud Academy Section -->
-    <section id="academy" style="padding: 100px 10%; background: linear-gradient(180deg, rgba(5,5,10,0) 0%, rgba(176,38,255,0.05) 50%, rgba(5,5,10,0) 100%); position: relative;">
-        <div style="text-align: center; margin-bottom: 60px;">
-            <h2 style="font-size: 56px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">
-                ITcloud <span style="color: var(--neon-purple); text-shadow: 0 0 20px rgba(176,38,255,0.5);">Academy</span>
-            </h2>
-            <p style="font-size: 20px; opacity: 0.7; max-width: 700px; margin: 20px auto;">
-                {{ __('Kelajak dasturchilarini tayyorlaymiz. Amaliyot va ish bilan ta\'minlash kafolati bilan.') }}
-            </p>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: start;">
-            <div class="glass-panel" style="padding: 40px; border-top: 3px solid var(--neon-purple);">
-                <h3 style="margin-bottom: 30px; font-size: 24px; color: var(--neon-purple);"><i class="fa-solid fa-graduation-cap"></i> {{ __("O'quvchi Bo'lish uchun Ariza") }}</h3>
-                <form id="academyForm">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div>
-                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("To'liq Ismingiz") }}</label>
-                            <input type="text" id="acad_name" required style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
-                        </div>
-                        <div>
-                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Email") }}</label>
-                            <input type="email" id="acad_email" required style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div>
-                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Telefon") }}</label>
-                            <input type="text" id="acad_phone" required placeholder="+998" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
-                        </div>
-                        <div>
-                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Yashash Joyingiz") }}</label>
-                            <input type="text" id="acad_location" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                        <div>
-                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Yo'nalish") }}</label>
-                            <select id="acad_direction" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
-                                <option value="frontend">Frontend (Vue/React)</option>
-                                <option value="backend">Backend (Laravel/Python)</option>
-                                <option value="ai">AI & Prompt Engineering</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display:block; margin-bottom:8px; opacity: 0.6; font-size: 14px;">{{ __("Daraja") }}</label>
-                            <select id="acad_level" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:10px; color:white;">
-                                <option value="beginner">Noldan (Beginner)</option>
-                                <option value="intermediate">Kichik tajriba (Junior)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-ios" style="width: 100%; padding: 18px; background: var(--neon-purple); border-radius: 15px; font-size: 16px; box-shadow: 0 0 20px rgba(176,38,255,0.3);">
-                        {{ __('Arizani Yuborish & AI Review') }} <i class="fa-solid fa-paper-plane" style="margin-left: 10px;"></i>
-                    </button>
-                </form>
+    <!-- ITcloud Academy Teaser -->
+    <section id="academy" style="padding: 120px 10%; background: linear-gradient(180deg, rgba(176,38,255,0.05) 0%, rgba(5,5,10,0) 100%);">
+        <div class="product-card" style="text-align: center; border: 1px solid var(--neon-purple); background: rgba(176,38,255,0.03);">
+            <div style="background: rgba(176, 38, 255, 0.1); padding: 8px 16px; border-radius: 20px; border: 1px solid var(--neon-purple); color: var(--neon-purple); font-weight: 700; font-size: 11px; letter-spacing: 2px; width: fit-content; margin: 0 auto 30px;">
+                ITCLOUD ACADEMY
             </div>
-
-            <div style="padding: 20px;">
-                <div class="glass-panel" style="padding: 30px; margin-bottom: 20px;">
-                    <h4 style="color: var(--neon-cyan); margin-bottom: 15px;"><i class="fa-solid fa-code-branch"></i> {{ __("ITcloud Sandbox") }}</h4>
-                    <p style="font-size: 15px; opacity: 0.8; line-height: 1.6;">{{ __("O'quvchilar real loyihalarda xavfsiz Sandbox hududida ishlashadi. Barcha yozilgan kodlar AI Mentor tomonidan tahlil qilinadi va havfsiz bo'lsagina asosiy loyihaga integratsiya qilinadi.") }}</p>
-                </div>
-                <div class="glass-panel" style="padding: 30px; margin-bottom: 20px;">
-                    <h4 style="color: var(--neon-purple); margin-bottom: 15px;"><i class="fa-solid fa-sack-dollar"></i> {{ __("Bounty Tizimi") }}</h4>
-                    <p style="font-size: 15px; opacity: 0.8; line-height: 1.6;">{{ __("Vazifalarni muvaffaqiyatli bajargan o'quvchilar nafaqat XP (tajriba), balki real pullik mukofotlar va oylik maosh olish imkoniyatiga ega bo'ladilar.") }}</p>
-                </div>
-                <div class="glass-panel" style="padding: 30px;">
-                    <h4 style="color: var(--neon-pink); margin-bottom: 15px;"><i class="fa-solid fa-shield-check"></i> {{ __("ISA Kafolati") }}</h4>
-                    <p style="font-size: 15px; opacity: 0.8; line-height: 1.6;">{{ __("Bepul o'qish evaziga bitiruvchilar ITcloud jamoasida 1.5 yil davomida kafolatlangan ish bilan ta'minlanadi. Bu sizning kelajakdagi karyerangiz!)") }}</p>
-                </div>
+            <h2 style="font-size: clamp(32px, 5vw, 56px); font-weight: 800; margin-bottom: 25px;">
+                Kelajak Dasturchilarini <span style="color: var(--neon-purple);">Tayyorlaymiz</span>
+            </h2>
+            <p style="font-size: 20px; color: var(--text-muted); max-width: 800px; margin: 0 auto 50px;">
+                Real loyihalar, Bounty tizimi va ISA kafolati bilan professional IT karyerangizni boshlang.
+            </p>
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <a href="{{ route('academy.landing') }}" class="btn-neon" style="background: var(--neon-purple); box-shadow: 0 0 30px rgba(176,38,255,0.3); width: auto; padding: 20px 50px;">
+                    Akademiya Portali <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
             </div>
         </div>
     </section>

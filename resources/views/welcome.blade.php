@@ -48,30 +48,42 @@
         /* Dynamic Island (iOS uslubi) */
         .dynamic-island {
             position: fixed;
-            top: 15px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: #000000;
-            border: 1px solid var(--glass-border);
-            border-radius: 40px;
-            padding: 10px 25px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px;
+            padding: 8px 22px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            overflow: hidden;
-            min-width: 200px;
+            gap: 12px;
+            min-width: 180px;
             justify-content: center;
+            touch-action: none;
+            user-select: none;
+            cursor: grab;
         }
-        .dynamic-island.active { min-width: 400px; padding: 15px 25px; border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 255, 204, 0.2); }
-        .island-content { font-size: 14px; font-weight: 600; color: var(--text-main); white-space: nowrap; transition: 0.3s; }
-        .island-icon { color: var(--neon-cyan); display: none; }
-        .dynamic-island.active .island-icon { display: block; animation: pulse 1.5s infinite; }
+        .dynamic-island:active { cursor: grabbing; }
+        .dynamic-island:hover { 
+            transform: translateX(-50%) translateY(5px);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2);
+        }
+        .dynamic-island.active { 
+            min-width: 320px; 
+            padding: 12px 30px; 
+            border-radius: 20px;
+            background: #000;
+        }
+        .island-icon { color: var(--neon-cyan); font-size: 16px; animation: glowPulse 2s infinite; }
+        .island-content { font-size: 13px; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; }
+        .island-sub { font-size: 10px; color: var(--text-muted); display: none; margin-top: 2px; }
+        .dynamic-island.active .island-sub { display: block; animation: fadeIn 0.4s ease; }
 
-        @keyframes pulse { 0% { opacity: 0.5; text-shadow: 0 0 0 var(--neon-cyan); } 50% { opacity: 1; text-shadow: 0 0 15px var(--neon-cyan); } 100% { opacity: 0.5; text-shadow: 0 0 0 var(--neon-cyan); } }
+        @keyframes glowPulse { 0% { filter: drop-shadow(0 0 0px var(--neon-cyan)); } 50% { filter: drop-shadow(0 0 10px var(--neon-cyan)); } 100% { filter: drop-shadow(0 0 0px var(--neon-cyan)); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Glass Panel umumiy klassi */
         .glass-panel {
@@ -86,16 +98,36 @@
         .sidebar { 
             width: 280px; 
             margin: 20px; 
-            padding: 30px 20px; 
+            padding: 50px 20px 20px 20px; 
             display: flex; 
             flex-direction: column; 
-            z-index: 10;
+            z-index: 1000;
             height: calc(100vh - 40px);
             overflow-y: auto;
             position: sticky;
             top: 20px;
+            scrollbar-width: thin;
         }
-        .brand { margin-bottom: 40px; text-align: center; }
+        
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; }
+            .sidebar { 
+                width: calc(100% - 30px); 
+                height: auto; 
+                margin: 15px; 
+                padding: 25px 15px; 
+                position: relative; 
+                top: 0;
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 10px;
+            }
+            .brand { margin-bottom: 0; display: none; } /* Hide logo in sidebar on mobile as top-logo is preferred or just space saving */
+            .main-container { padding: 80px 15px 20px 15px; }
+            .nav-item { padding: 10px 15px; font-size: 13px; white-space: nowrap; margin-bottom: 0; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+        .brand { margin-bottom: 50px; text-align: center; }
         .logo-animated {
             width: 140px;
             height: auto;
@@ -112,6 +144,15 @@
             50% { transform: translateY(-8px) rotate(1deg); }
         }
 
+        .mobile-header {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            padding: 0 20px; align-items: center; justify-content: space-between;
+            z-index: 9998; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-bottom: 1px solid var(--glass-border);
+        }
+        @media (max-width: 900px) {
+            .mobile-header { display: flex; }
+        }
         .nav-item {
             padding: 15px 20px; border-radius: 18px; margin-bottom: 10px; cursor: pointer;
             display: flex; align-items: center; gap: 15px; font-size: 15px; font-weight: 600; color: var(--text-muted);
@@ -144,7 +185,8 @@
         .feed-time { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
 
         /* Mijozlar (Tenants) Jadvali */
-        .tenant-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; align-items: center; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 20px; margin-bottom: 15px; border: 1px solid var(--glass-border); transition: 0.3s; }
+        .tenant-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; align-items: center; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 20px; margin-bottom: 15px; border: 1px solid var(--glass-border); transition: 0.3s; min-width: 600px; }
+        .view-section { overflow-x: auto; }
         .tenant-row:hover { background: rgba(255,255,255,0.03); border-color: var(--neon-cyan); }
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
         .status-active { color: var(--neon-cyan); background: rgba(0, 255, 204, 0.1); border: 1px solid var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 255, 204, 0.2); }
@@ -166,28 +208,72 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
-        /* Mobile Layout */
+        /* Mobile Layout Optimization (9:16 Vertical Friendly) */
         @media (max-width: 900px) {
             body { flex-direction: column; overflow: auto; }
-            .sidebar { width: auto; margin: 10px; padding: 15px; flex-direction: row; overflow-x: auto; margin-top: 80px; }
+            .sidebar { 
+                width: 100%; height: auto; margin: 0; padding: 15px; 
+                flex-direction: row; position: fixed; bottom: 0; top: auto;
+                border-radius: 30px 30px 0 0; border: 1px solid var(--glass-border);
+                border-bottom: none; z-index: 2000;
+                justify-content: space-around; backdrop-filter: blur(25px);
+            }
             .brand { display: none; }
-            .nav-item { margin-bottom: 0; margin-right: 10px; white-space: nowrap; }
-            .main-container { padding: 10px; overflow: visible; }
-            .dynamic-island { top: 10px; min-width: 150px; padding: 10px 15px; }
+            .nav-item { margin-bottom: 0; white-space: nowrap; flex-direction: column; gap: 5px; font-size: 10px; padding: 10px; margin-right: 0; }
+            .nav-item i { font-size: 18px; margin: 0; }
+            .main-container { padding: 15px; padding-bottom: 100px; margin-top: 80px; }
+            .dynamic-island { top: 10px; min-width: 150px; padding: 10px 15px; z-index: 3000; }
             .dynamic-island.active { min-width: 300px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .content-row { grid-template-columns: 1fr; }
-            .tenant-row { grid-template-columns: 1fr; gap: 15px; text-align: center; }
-            .tenant-row > div { display: flex; flex-direction: column; align-items: center; }
-            .tenant-row .btn-ios { width: 100%; margin: 5px 0; }
         }
 
         @media (max-width: 500px) {
             .stats-grid { grid-template-columns: 1fr; }
-            .dynamic-island { width: 90%; }
+            .nav-item span { display: none; }
         }
 
-        /* Lang Switcher Premium */
+        /* Lang Switcher Naked Style (Invisible container) */
+        .lang-switcher-premium {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 10000;
+            background: transparent;
+            border: none;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .lang-choices { 
+            display: flex;
+            width: 0;
+            overflow: hidden;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 10px;
+            align-items: center;
+        }
+        .lang-switcher-premium:hover .lang-choices { width: 110px; }
+        .lang-flag-img { 
+            width: 22px; 
+            height: 14px; 
+            object-fit: cover; 
+            border-radius: 2px; 
+            transition: 0.2s; 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .lang-flag-link:hover .lang-flag-img { transform: scale(1.2); filter: brightness(1.2); }
+        .current-flag-img { border: 1px solid rgba(0, 255, 204, 0.8); }
+
+        @media (max-width: 900px) {
+            .lang-switcher-premium { top: 10px; right: 10px; }
+            .lang-flag-img { width: 18px; height: 12px; }
+            .lang-switcher-premium:hover .lang-choices { width: 85px; }
+        }
+
         /* Academy Specific */
         .btn-tabs {
             padding: 8px 18px; border-radius: 10px; border: 1px solid transparent; background: transparent;
@@ -457,12 +543,34 @@
 </head>
 <body>
 
+    <div class="lang-switcher-premium">
+        <span class="lang-flag current">
+            @php $cur = App::getLocale(); @endphp
+            <img src="https://flagcdn.com/w40/{{ $cur == 'en' ? 'gb' : $cur }}.png" class="lang-flag-img current-flag-img">
+        </span>
+        <div class="lang-choices">
+            <a href="{{ route('lang.switch', 'uz') }}" class="lang-flag-link" title="O'zbek"><img src="https://flagcdn.com/w40/uz.png" class="lang-flag-img"></a>
+            <a href="{{ route('lang.switch', 'tr') }}" class="lang-flag-link" title="Türkçe"><img src="https://flagcdn.com/w40/tr.png" class="lang-flag-img"></a>
+            <a href="{{ route('lang.switch', 'ru') }}" class="lang-flag-link" title="Русский"><img src="https://flagcdn.com/w40/ru.png" class="lang-flag-img"></a>
+            <a href="{{ route('lang.switch', 'en') }}" class="lang-flag-link" title="English"><img src="https://flagcdn.com/w40/gb.png" class="lang-flag-img"></a>
+        </div>
+    </div>
+
+    <div class="mobile-header glass-panel" style="display: none;">
+        <div class="logo-animated" style="font-size: 22px; font-weight: 800;">
+            IT<span style="color: var(--neon-cyan);">cloud</span>
+        </div>
+    </div>
+
     <div class="ambient-blob blob-1"></div>
     <div class="ambient-blob blob-2"></div>
 
     <div class="dynamic-island" id="dynamicIsland" onclick="simulateAIAction()">
         <i class="fa-solid fa-sparkles island-icon"></i>
-        <span class="island-content" id="islandText">Obsidian OS v1</span>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <span class="island-content" id="islandText">Obsidian OS v1</span>
+            <span class="island-sub" id="islandSub">AI faolligi normal</span>
+        </div>
     </div>
 
     <nav class="sidebar glass-panel">
@@ -525,6 +633,12 @@
         <div class="nav-item" data-module="student_chat" onclick="switchTab('student_chat')">
             <i class="fa-solid fa-comments"></i> {{ __('Global Chat') }}
         </div>
+        <div class="nav-item" data-module="student_achievements" onclick="switchTab('student_achievements')">
+            <i class="fa-solid fa-medal"></i> {{ __('Yutuqlarim') }}
+        </div>
+        <div class="nav-item" data-module="student_jobs" onclick="switchTab('student_jobs')">
+            <i class="fa-solid fa-briefcase"></i> {{ __('Karyera M.)') }}
+        </div>
 
         @endif
 
@@ -535,14 +649,6 @@
         @endif
 
         
-        <div style="margin-top: auto; padding: 20px 10px; background: rgba(0,0,0,0.3); border-radius: 20px; border: 1px solid var(--glass-border); margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-around; align-items: center; gap: 5px;">
-                <a href="{{ route('lang.switch', 'uz') }}" class="lang-btn {{ App::getLocale() == 'uz' ? 'active' : '' }}" title="O'zbek">UZ</a>
-                <a href="{{ route('lang.switch', 'tr') }}" class="lang-btn {{ App::getLocale() == 'tr' ? 'active' : '' }}" title="Türkçe">TR</a>
-                <a href="{{ route('lang.switch', 'ru') }}" class="lang-btn {{ App::getLocale() == 'ru' ? 'active' : '' }}" title="Русский">RU</a>
-                <a href="{{ route('lang.switch', 'en') }}" class="lang-btn {{ App::getLocale() == 'en' ? 'active' : '' }}" title="English">EN</a>
-            </div>
-        </div>
 
         <form id="logoutForm" action="{{ route('logout') }}" method="POST" style="margin-top: 20px;">
             @csrf
@@ -824,6 +930,7 @@
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
                 @foreach($employees ?? [] as $emp)
+                @if($emp->role !== 'student')
                 <div class="glass-panel" style="padding: 20px; border-left: 4px solid {{ $emp->role === 'master' ? 'var(--neon-purple)' : 'var(--neon-cyan)' }};">
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
@@ -851,6 +958,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
                 @endforeach
             </div>
 
@@ -889,12 +997,19 @@
                         <div class="status-badge {{ $bot->is_active ? 'status-active' : 'status-blocked' }}" style="font-size: 10px;">{{ $bot->is_active ? 'ONLINE' : 'OFFLINE' }}</div>
                     </div>
                     
-                    <div style="margin-bottom: 15px; font-size: 13px; color: rgba(255,255,255,0.7); min-height: 40px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                    <div style="margin-bottom: 15px; font-size: 13px; color: rgba(255,255,255,0.7); min-height: 40px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; position: relative; overflow: hidden;">
                         @if($bot->agent_type === 'pr_channel')
-                        <span style="opacity: 0.5;">PR Strategiya:</span> {{ Str::limit($bot->custom_prompt ?? 'Standart post.', 60) }}<br/>
+                        <span style="opacity: 0.5;">PR Strategiya:</span> {{ Str::limit($bot->custom_prompt ?? 'Standart post.', 60) }}
+                        @if(strlen($bot->custom_prompt ?? '') > 60)
+                             <a href="javascript:void(0)" onclick="openBotModal(JSON.parse(this.dataset.bot))" style="color: var(--neon-cyan); font-size: 10px; text-decoration: none; margin-left: 5px;">Barchasi...</a>
+                        @endif
+                        <br/>
                         <span style="opacity: 0.5;"><i class="fa-solid fa-clock"></i> Reja:</span> Har kuni {{ $bot->schedule_time }}
                         @else
-                        <span style="opacity: 0.5;">Missiya:</span> {{ $bot->current_task ?? 'Standart boshqaruv rejimi.' }}
+                        <span style="opacity: 0.5;">Missiya:</span> {{ Str::limit($bot->current_task ?? 'Standart boshqaruv rejimi.', 80) }}
+                        @if(strlen($bot->current_task ?? '') > 80)
+                             <a href="javascript:void(0)" onclick="openTaskModal({{ $bot->id }}, '{{ $bot->name }}', '{{ addslashes($bot->current_task) }}')" style="color: var(--neon-cyan); font-size: 10px; text-decoration: none; margin-left: 5px;">Barchasi...</a>
+                        @endif
                         @endif
                     </div>
 
@@ -1271,9 +1386,11 @@
         <div style="display: flex; gap: 10px; margin-bottom: 30px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 12px; border: 1px solid var(--glass-border); width: fit-content;">
             <button class="btn-tabs active" onclick="switchAcademyTab(this, 'acad-apps')">Arizalar <span class="badge" id="badge-apps">0</span></button>
             <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-students')">O'quvchilar</button>
+            <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-logins')">O'quvchi Logini</button>
             <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-courses')">Kurslar & AI</button>
             <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-mentors')">Ustozlar (I-Ticher)</button>
             <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-analytics')">Natijalar & IQ</button>
+            <button class="btn-tabs" onclick="switchAcademyTab(this, 'acad-pro')"><i class="fa-solid fa-briefcase"></i> Professional (Karyera)</button>
         </div>
 
         <!-- 1. ARIZALAR -->
@@ -1296,6 +1413,28 @@
                 </div>
                 <div id="academy-students-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
                     <!-- Student Cards -->
+                </div>
+            </div>
+        </div>
+
+        <div id="acad-logins" class="academy-tab-content" style="display: none;">
+            <div class="glass-panel" style="padding: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3>O'quvchi Loginlari & Parollari</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border); text-align: left; font-size: 13px; color: #888;">
+                                <th style="padding: 15px;">Talaba</th>
+                                <th>Login (Email)</th>
+                                <th>Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="academy-logins-list">
+                            <!-- Logins -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -1350,6 +1489,33 @@
                     </div>
                     <div class="acad-stat-box">
                         <span>Muvaffaqiyat:</span> <strong id="acad-pass-rate">...</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. PROFESSIONAL (CAREER & GAMI) -->
+        <div id="acad-pro" class="academy-tab-content" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <!-- Job Board -->
+                <div class="glass-panel" style="padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 15px;">
+                        <h3><i class="fa-solid fa-briefcase"></i> Vakansiyalar Markazi</h3>
+                        <button class="btn-ios" style="background: var(--neon-cyan); color: black;" onclick="openJobModal()"><i class="fa-solid fa-plus"></i> Yangi Ish</button>
+                    </div>
+                    <div id="academy-jobs-list" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div style="text-align: center; padding: 20px; opacity: 0.5;">Yuklanmoqda...</div>
+                    </div>
+                </div>
+                
+                <!-- Achievements & Badges -->
+                <div class="glass-panel" style="padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 15px;">
+                        <h3><i class="fa-solid fa-medal"></i> Yutuqlar (Badges)</h3>
+                        <button class="btn-ios" style="background: var(--neon-purple); color: white;" onclick="openAchievementModal()"><i class="fa-solid fa-plus"></i> Nishon Qo'shish</button>
+                    </div>
+                    <div id="academy-achievements-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">
+                        <div style="text-align: center; padding: 20px; opacity: 0.5;">Yuklanmoqda...</div>
                     </div>
                 </div>
             </div>
@@ -1464,6 +1630,39 @@
                     <button onclick="sendGlobalChat()" class="btn-ios btn-neon"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
                 <div id="file-preview-label" style="padding: 0 20px 10px; font-size: 10px; color: var(--neon-cyan); display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Achievements -->
+    <div id="student_achievements" class="view-section">
+        <h2 style="margin-bottom: 25px;"><i class="fa-solid fa-medal"></i> Mening <span style="color: var(--neon-purple);">Yutuqlarim</span></h2>
+        <div id="s-achievements-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+            <div style="opacity: 0.5;">Yuklanmoqda...</div>
+        </div>
+    </div>
+
+    <!-- Student Careers -->
+    <div id="student_jobs" class="view-section">
+        <h2 style="margin-bottom: 25px;"><i class="fa-solid fa-briefcase"></i> Karyera <span style="color: var(--neon-cyan);">Markazi</span></h2>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+            <div class="glass-panel" style="padding: 25px;">
+                <h3>Mavjud Vakansiyalar</h3>
+                <div id="s-jobs-list" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                    <div style="opacity: 0.5;">Yuklanmoqda...</div>
+                </div>
+            </div>
+            <div class="glass-panel" style="padding: 25px;">
+                <h3>Status & Sertifikatlar</h3>
+                <div id="s-career-status" style="margin-top: 10px; text-align: center; padding: 25px; border-radius: 15px; background: rgba(0,255,204,0.05); border: 1px solid rgba(0,255,204,0.1);">
+                    <div id="s-career-readiness-badge">Tahlil qilinmoqda...</div>
+                </div>
+                <div style="margin-top: 25px;">
+                    <h4><i class="fa-solid fa-certificate"></i> Mening Sertifikatlarim</h4>
+                    <div id="s-certs-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        <div style="opacity: 0.3; font-size: 11px;">Hali sertifikat yo'q.</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2563,6 +2762,8 @@
                 }
             });
 
+            if(tabId === 'student_achievements') loadStudentAchievements();
+            if(tabId === 'student_jobs') loadStudentJobs();
             if(tabId === 'ai_developer') loadAiProjects();
             if(tabId === 'live_chat') startLiveChatPolling();
 
@@ -2855,30 +3056,86 @@
 
         // Refresh loop
         setInterval(updateActiveChats, 10000); // 10 sekunda yangilab turadi
-        function simulateAIAction(customText = null) {
+        const aiActivities = [
+            { main: "Yangi Lead!", sub: "Bot: Azamat bilan suhbat yakunlandi" },
+            { main: "To'lov qabul qilindi", sub: "+45,000,000 UZS (Delta Edu)" },
+            { main: "AI Moderatsiya", sub: "Chatda 1 ta xabar bloklandi" },
+            { main: "Dars yaratildi", sub: "I-Ticher: Python darsi tayyor" },
+            { main: "Yangi Mijoz", sub: "Visa konsalting shartnomasi" }
+        ];
+
+        function simulateAIAction(customText = null, customSub = null) {
             const island = document.getElementById('dynamicIsland');
             const text = document.getElementById('islandText');
+            const sub = document.getElementById('islandSub');
             
             island.classList.add('active');
-            text.innerHTML = customText || "{{ __('Agent Gemini: Conversing with client...') }}";
+            text.innerHTML = customText || aiActivities[Math.floor(Math.random() * aiActivities.length)].main;
+            if(sub) sub.innerHTML = customSub || aiActivities[Math.floor(Math.random() * aiActivities.length)].sub;
             text.style.color = "var(--neon-cyan)";
             
-            // 3 soniyadan keyin qaytish
             setTimeout(() => {
-                if(!customText) {
-                    text.innerHTML = "{{ __('Payment accepted!') }}";
-                    text.style.color = "var(--neon-purple)";
-                }
-                
+                island.classList.remove('active');
                 setTimeout(() => {
-                    island.classList.remove('active');
-                    setTimeout(() => {
-                        text.innerHTML = "Obsidian OS v1";
-                        text.style.color = "var(--text-main)";
-                    }, 300);
-                }, 2000);
-            }, 3000);
+                    text.innerHTML = "Obsidian OS v1";
+                    text.style.color = "white";
+                    if(sub) sub.innerHTML = "AI faolligi normal";
+                }, 400);
+            }, 5000);
         }
+
+        // Draggable Island Logic
+        (function() {
+            const island = document.getElementById('dynamicIsland');
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
+            island.addEventListener('mousedown', dragStart);
+            island.addEventListener('touchstart', dragStart, { passive: false });
+
+            function dragStart(e) {
+                if (e.target.closest('button')) return;
+                isDragging = true;
+                const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+                startX = clientX; startY = clientY;
+                const rect = island.getBoundingClientRect();
+                initialX = rect.left + rect.width / 2;
+                initialY = rect.top;
+                island.style.transition = 'none';
+                document.addEventListener('mousemove', dragMove);
+                document.addEventListener('touchmove', dragMove, { passive: false });
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchend', dragEnd);
+            }
+
+            function dragMove(e) {
+                if (!isDragging) return;
+                const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                island.style.left = `calc(50% + ${dx}px)`;
+                island.style.top = `${initialY + dy}px`;
+            }
+
+            function dragEnd() {
+                isDragging = false;
+                island.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                document.removeEventListener('mousemove', dragMove);
+                document.removeEventListener('touchmove', dragMove);
+                document.removeEventListener('mouseup', dragEnd);
+                document.removeEventListener('touchend', dragEnd);
+            }
+        })();
+
+        // Tasodifiy AI faolligini ko'rsatib turish
+        setInterval(() => {
+            if(!document.getElementById('dynamicIsland').classList.contains('active')) {
+                const act = aiActivities[Math.floor(Math.random() * aiActivities.length)];
+                simulateAIAction(act.main, act.sub);
+            }
+        }, 15000);
 
         // Sessiya nazorati (Auto-Logout) - 15 daqiqa harakatsizlik
         let inactivityTime = function () {
@@ -2912,9 +3169,14 @@
                 const data = await res.json();
 
                 // Update Stats
-                document.getElementById('stats-total-revenue').innerText = new Intl.NumberFormat('uz-UZ').format(data.stats.total_revenue) + " UZS";
-                document.getElementById('stats-active-tenants').innerText = data.stats.active_tenants;
-                document.getElementById('stats-new-leads').innerText = data.stats.new_leads_today;
+                const revEl = document.getElementById('stats-total-revenue');
+                if(revEl) revEl.innerText = new Intl.NumberFormat('uz-UZ').format(data.stats.total_revenue) + " UZS";
+                
+                const tenEl = document.getElementById('stats-active-tenants');
+                if(tenEl) tenEl.innerText = data.stats.active_tenants;
+
+                const leadEl = document.getElementById('stats-new-leads');
+                if(leadEl) leadEl.innerText = data.stats.new_leads_today;
                 
                 // Chart logic remains same...
                 renderMainChart(data);
@@ -3190,9 +3452,153 @@
             btn.classList.add('active');
             
             if(tabId === 'acad-students') loadAcademyStudentsFull();
+            if(tabId === 'acad-logins') loadAcademyLogins();
             if(tabId === 'acad-courses') loadAcademyCourses();
             if(tabId === 'acad-mentors') loadAcademyMentors();
             if(tabId === 'acad-analytics') loadAcademyAnalytics();
+            if(tabId === 'acad-pro') loadAcademyPro();
+        }
+
+        async function loadAcademyPro() {
+            // Load Achievements
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/achievements`);
+                const data = await res.json();
+                document.getElementById('academy-achievements-list').innerHTML = data.map(a => `
+                    <div class="glass-panel" style="padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer;">
+                        <i class="fa-solid ${a.icon}" style="font-size: 24px; color: var(--neon-purple); margin-bottom: 10px;"></i>
+                        <div style="font-size: 11px; font-weight: bold; color: white;">${a.name}</div>
+                        <div style="font-size: 9px; opacity: 0.5; margin-top: 5px;">${a.points} XP • ${a.description}</div>
+                    </div>
+                `).join('') || '<div style="opacity: 0.5;">Yutuqlar yo\'q</div>';
+            } catch(e) {}
+
+            // Load Jobs
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/jobs`);
+                const data = await res.json();
+                document.getElementById('academy-jobs-list').innerHTML = data.map(j => `
+                    <div class="glass-panel" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--neon-cyan);">
+                        <div>
+                            <h5 style="margin: 0; color: white; font-size: 14px;">${j.title}</h5>
+                            <div style="font-size: 11px; opacity: 0.7;">${j.company_name} • ${j.location}</div>
+                            <div style="font-size: 10px; color: var(--neon-cyan); margin-top: 5px; font-family: monospace;">
+                                <i class="fa-solid fa-money-bill-wave"></i> ${new Intl.NumberFormat().format(j.salary_range_min)} - ${new Intl.NumberFormat().format(j.salary_range_max)} UZS
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-ios" onclick="viewJobApplications(${j.id})" title="Arizalar" style="padding: 8px;"><i class="fa-solid fa-users-viewfinder"></i></button>
+                            <button class="btn-ios" onclick="deleteJob(${j.id})" title="O'chirish" style="padding: 8px; color: var(--neon-pink); opacity: 0.5;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('') || '<div style="opacity: 0.5;">Faol vakansiyalar yo\'q</div>';
+            } catch(e) {}
+        }
+
+        async function deleteJob(id) {
+            if(!confirm('Ishni o\'chirishni tasdiqlaysizmi?')) return;
+            try {
+                await fetch(`${API_PREFIX}/academy/jobs/${id}`, { method: 'DELETE' });
+                loadAcademyPro();
+            } catch(e) {}
+        }
+
+        async function deleteAchievement(id) {
+            if(!confirm('Yutuqni o\'chirishni tasdiqlaysizmi?')) return;
+            try {
+                await fetch(`${API_PREFIX}/academy/achievements/${id}`, { method: 'DELETE' });
+                loadAcademyPro();
+            } catch(e) {}
+        }
+
+        async function openJobModal() {
+            Swal.fire({
+                title: 'Yangi Vakansiya Qo\'shish',
+                html: `
+                    <div style="text-align: left;">
+                        <input id="job-title" class="swal2-input" placeholder="Lavozim (e.g. Senior Laravel)" style="width: 80%;">
+                        <input id="job-company" class="swal2-input" placeholder="Kompaniya nomi" style="width: 80%;">
+                        <textarea id="job-desc" class="swal2-textarea" placeholder="Ish tavsifi va talablar" style="width: 80%;"></textarea>
+                        <input id="job-location" class="swal2-input" placeholder="Joylashuv (e.g. Masofaviy)" style="width: 80%;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding: 0 40px;">
+                            <div>
+                                <label style="font-size: 11px; opacity: 0.5;">Min Oylik</label>
+                                <input id="job-min" type="number" class="swal2-input" style="margin: 0; width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; opacity: 0.5;">Max Oylik</label>
+                                <input id="job-max" type="number" class="swal2-input" style="margin: 0; width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Joylash',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        title: document.getElementById('job-title').value,
+                        company_name: document.getElementById('job-company').value,
+                        description: document.getElementById('job-desc').value,
+                        location: document.getElementById('job-location').value,
+                        salary_range_min: document.getElementById('job-min').value,
+                        salary_range_max: document.getElementById('job-max').value,
+                        is_active: true
+                    }
+                }
+            }).then(async (result) => {
+                if(result.isConfirmed) {
+                    await fetch(`${API_PREFIX}/academy/jobs`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content},
+                        body: JSON.stringify(result.value)
+                    });
+                    loadAcademyPro();
+                }
+            });
+        }
+
+        async function viewJobApplications(jobId) {
+            Swal.fire({
+                title: 'Arizalar Ro\'yxati',
+                text: 'Hozircha arizalar yo\'q (MOCK).',
+                background: '#0a0a1a',
+                color: '#fff'
+            });
+        }
+
+        async function openAchievementModal() {
+            Swal.fire({
+                title: 'Yangi Yutuq (Badge) Qo\'shish',
+                html: `
+                    <input id="ach-name" class="swal2-input" placeholder="Yutuq nomi (e.g. Master Archer)">
+                    <input id="ach-desc" class="swal2-input" placeholder="Tavsif">
+                    <input id="ach-icon" class="swal2-input" placeholder="Icon (e.g. fa-chess-knight)">
+                    <input id="ach-points" type="number" class="swal2-input" placeholder="XP miqdori">
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Qo\'shish',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        name: document.getElementById('ach-name').value,
+                        description: document.getElementById('ach-desc').value,
+                        icon: document.getElementById('ach-icon').value,
+                        points: document.getElementById('ach-points').value
+                    }
+                }
+            }).then(async (result) => {
+                if(result.isConfirmed) {
+                    await fetch(`${API_PREFIX}/academy/achievements`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content},
+                        body: JSON.stringify(result.value)
+                    });
+                    loadAcademyPro();
+                }
+            });
         }
 
         async function initAcademyDashboard() {
@@ -3229,11 +3635,18 @@
                                     <span class="badge" style="background: rgba(176,38,255,0.1); color: var(--neon-purple); border: 1px solid rgba(176,38,255,0.2);">${s.rank}</span>
                                     <span class="badge" style="background: rgba(0,255,204,0.1); color: var(--neon-cyan); border: 1px solid rgba(0,255,204,0.2);">${s.study_status.toUpperCase()}</span>
                                 </div>
-                                <div style="margin-top: 10px; font-size: 12px;">XP: <b style="color: var(--neon-cyan);">${s.total_xp}</b></div>
+                                <div style="margin-top: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 3px;">
+                                    <span>XP: <b style="color: var(--neon-cyan);">${s.total_xp}</b></span>
+                                    ${s.jshir ? `<span style="font-size: 10px; opacity: 0.6;">JSHIR: ${s.jshir}</span>` : ''}
+                                    ${s.passport_number ? `<span style="font-size: 10px; opacity: 0.6;">Passport: ${s.passport_number}</span>` : ''}
+                                    ${s.address ? `<span style="font-size: 10px; opacity: 0.6; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 150px;">Manzil: ${s.address}</span>` : ''}
+                                </div>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 5px;">
-                                <button class="btn-ios" onclick="openStudentModal(${s.id})" style="padding: 5px 8px;"><i class="fa-solid fa-pen"></i></button>
-                                <button class="btn-ios" onclick="openStudentAnalytics(${s.id})" style="padding: 5px 8px;"><i class="fa-solid fa-chart-line"></i></button>
+                                <button class="btn-ios" onclick="openStudentModal(${s.id})" style="padding: 5px 8px;" title="Tahrirlash"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-ios" onclick="viewStudentEnrollments(${s.id})" style="padding: 5px 8px;" title="Kurslar"><i class="fa-solid fa-graduation-cap"></i></button>
+                                <button class="btn-ios" onclick="viewStudentPayment(${s.id})" style="padding: 5px 8px;" title="To'lovlar"><i class="fa-solid fa-wallet"></i></button>
+                                <button class="btn-ios" onclick="openStudentAnalytics(${s.id})" style="padding: 5px 8px;" title="Analytics"><i class="fa-solid fa-chart-line"></i></button>
                             </div>
                         </div>
                     </div>
@@ -3251,34 +3664,53 @@
                     <div class="course-card">
                         <div>
                             <h4 style="margin: 0;">${c.title}</h4>
-                            <small style="opacity: 0.5;">Status: ${c.is_published ? 'E\'lon qilingan' : 'Qoralama'}</small>
+                            <div style="font-size: 11px; opacity: 0.5; margin-top: 3px;">
+                                Status: ${c.is_published ? 'E\'lon qilingan' : 'Qoralama'} | 
+                                Narx: <span style="color: var(--neon-cyan)">${new Intl.NumberFormat('uz-UZ').format(c.price || 0)} UZS</span>
+                            </div>
+                            ${c.mentor_id ? `<div style="font-size: 10px; color: var(--neon-purple); margin-top: 2px;"><i class="fa-solid fa-user-tie"></i> Mentor: ${window.academyMentors?.find(m=>m.id==c.mentor_id)?.name || 'Biriktirilgan'}</div>` : ''}
                         </div>
                         <div style="display: flex; gap: 10px;">
+                            <button class="btn-ios" onclick="openCourseModal(${c.id})" style="padding: 5px 12px;" title="Tahrirlash"><i class="fa-solid fa-edit"></i></button>
                             <button class="btn-ios" onclick="selectCourse(${c.id})"><i class="fa-solid fa-layer-group"></i> Darslar</button>
-                            <button class="btn-ios" onclick="openCourseModal(${c.id})"><i class="fa-solid fa-edit"></i></button>
                         </div>
                     </div>
                 `).join('');
             } catch(e) {}
         }
 
+        window.academyMentors = [];
         async function loadAcademyMentors() {
             const grid = document.getElementById('academy-mentors-grid');
+            if(!grid) return;
             grid.innerHTML = 'Yuklanmoqda...';
             try {
                 const res = await fetch(`${API_PREFIX}/academy/mentors`);
                 const mentors = await res.json();
+                if(!Array.isArray(mentors)) throw new Error("Format xatosi");
+                window.academyMentors = mentors;
+                
+                if (mentors.length === 0) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; opacity: 0.5;">Mentors yo\'q.</div>';
+                    return;
+                }
+
                 grid.innerHTML = mentors.map(m => `
                     <div class="glass-panel" style="padding: 20px; text-align: center; border-bottom: 3px solid ${m.is_active ? 'var(--neon-cyan)' : 'var(--neon-pink)'};">
                         <div style="width: 60px; height: 60px; border-radius: 50%; background: #000; margin: 0 auto 15px auto; border: 2px solid var(--neon-cyan); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--neon-cyan);">
                             <i class="fa-solid fa-robot"></i>
                         </div>
                         <h4 style="margin: 0 0 5px 0;">${m.name}</h4>
-                        <p style="font-size: 11px; opacity: 0.5; height: 40px; overflow: hidden; margin-bottom: 15px;">${m.instructions.substring(0, 60)}...</p>
-                        <button class="btn-ios btn-neon" onclick="openMentorModal(${m.id})">Sozlamalar</button>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+                            <button class="btn-ios" onclick="showFullPrompt(${m.id})" style="font-size: 10px; background: rgba(0,255,204,0.1); color: var(--neon-cyan); border: 1px solid var(--neon-cyan); padding: 8px;"><i class="fa-solid fa-eye"></i> Promtni ko'rish</button>
+                            <button class="btn-ios btn-neon" onclick="openMentorModal(${m.id})" style="padding: 8px;"><i class="fa-solid fa-gears"></i> Sozlamalar</button>
+                        </div>
                     </div>
                 `).join('');
-            } catch(e) {}
+            } catch(e) { 
+                console.error("Load Mentors Error", e);
+                grid.innerHTML = '<div style="color: var(--neon-pink);">Yuklashda xatolik yuz berdi.</div>';
+            }
         }
 
         async function loadAcademyAnalytics() {
@@ -3298,20 +3730,121 @@
             } catch(e) {}
         }
 
-        // --- Modals Sim ---
-        function openCourseModal(id = null) {
+        async function loadAcademyLogins() {
+            const list = document.getElementById('academy-logins-list');
+            if(!list) return;
+            list.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px;">Yuklanmoqda...</td></tr>';
+            try {
+                const res = await fetch(`${API_PREFIX}/employees?role=student`);
+                const students = await res.json();
+                window.academyLogins = students;
+                list.innerHTML = students.map(s => `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 15px;">
+                            <div style="font-weight: bold; color: white;">${s.name}</div>
+                        </td>
+                        <td style="color: var(--neon-cyan); opacity: 0.8;">${s.email}</td>
+                        <td style="padding: 15px;">
+                            <button class="btn-ios btn-neon" onclick="editStudentLogin(${s.id})" style="padding: 5px 12px; font-size: 11px;"><i class="fa-solid fa-key"></i> Parolni o'zgartirish</button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="3" style="text-align: center; padding: 40px; opacity: 0.5;">Talabalar topilmadi.</td></tr>';
+            } catch(e) { 
+                list.innerHTML = '<tr><td colspan="3">Xatolik yuz berdi.</td></tr>';
+            }
+        }
+
+        async function editStudentLogin(id) {
+            const s = (window.academyLogins || []).find(x => x.id == id);
+            if(!s) return;
+
+            const { value: formValues } = await Swal.fire({
+                title: `${s.name} parolini yangilash`,
+                html: `
+                    <div style="text-align: left;">
+                        <label style="font-size: 11px; color: #888;">Yangi Parol</label>
+                        <input id="new-password" type="password" class="swal2-input" placeholder="Yangi parol..." style="width: 80%;">
+                    </div>`,
+                showCancelButton: true,
+                confirmButtonText: 'Yangilash',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => [ document.getElementById('new-password').value ]
+            });
+
+            if (formValues && formValues[0]) {
+                try {
+                    const res = await fetch(`${API_PREFIX}/employees/${id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                        body: JSON.stringify({ 
+                            name: s.name, 
+                            email: s.email, 
+                            role: 'student', 
+                            password: formValues[0], 
+                            _method: 'PUT' 
+                        })
+                    });
+                    if (res.ok) {
+                        Swal.fire('Bajarildi!', 'Talaba paroli muvaffaqiyatli o\'zgartirildi.', 'success');
+                        loadAcademyLogins();
+                    }
+                } catch(e) {}
+            }
+        }
+        function showFullPrompt(id) {
+            const m = window.academyMentors.find(x => x.id == id);
+            if(!m) return;
+            Swal.fire({
+                title: `${m.name} uchun Promt`,
+                html: `<div style="text-align: left; font-size: 13px; max-height: 400px; overflow-y: auto; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--glass-border); color: #fff;">${m.instructions || m.system_prompt || 'Bo\'sh'}</div>`,
+                background: '#0a0a1a',
+                color: '#fff',
+                confirmButtonText: 'Yopish'
+            });
+        }
+        async function openCourseModal(id = null) {
+            const c = id ? (await (await fetch(`${API_PREFIX}/academy/courses`)).json()).find(x => x.id == id) : null;
+            const mentors = window.academyMentors || [];
+
             Swal.fire({
                 title: id ? 'Kursni tahrirlash' : 'Yangi Kurs yaratish',
-                html: `<input id="course-title" class="swal2-input" placeholder="Kurs nomi" style="background:#1a1a1a; color:white;">
-                       <textarea id="course-desc" class="swal2-textarea" placeholder="Tavsif" style="background:#1a1a1a; color:white;"></textarea>`,
+                html: `
+                    <div style="text-align: left;">
+                        <input id="course-title" class="swal2-input" placeholder="Kurs nomi" value="${c ? c.title : ''}" style="width: 80%;">
+                        <textarea id="course-desc" class="swal2-textarea" placeholder="Tavsif" style="width: 80%;">${c ? c.description : ''}</textarea>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                            <div>
+                                <label style="font-size: 11px; opacity: 0.5;">Umumiy narx (UZS)</label>
+                                <input id="course-price" type="number" class="swal2-input" value="${c ? c.price : 0}" style="margin: 0; width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; opacity: 0.5;">Oylik to'lov (UZS)</label>
+                                <input id="course-monthly" type="number" class="swal2-input" value="${c ? c.monthly_fee : 0}" style="margin: 0; width: 100%;">
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 15px;">
+                            <label style="font-size: 11px; opacity: 0.5;">Mentor biriktirish</label>
+                            <select id="course-mentor" class="swal2-input" style="width: 90%; background: #1a1a1a; color: white;">
+                                <option value="">Mentorsiz</option>
+                                ${mentors.map(m => `<option value="${m.id}" ${c && c.mentor_id == m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>`,
                 showCancelButton: true,
                 confirmButtonText: 'Saqlash',
                 background: '#0a0a1a',
                 color: '#fff',
                 preConfirm: () => {
                     return {
+                        id: id,
                         title: document.getElementById('course-title').value,
-                        description: document.getElementById('course-desc').value
+                        description: document.getElementById('course-desc').value,
+                        price: document.getElementById('course-price').value,
+                        monthly_fee: document.getElementById('course-monthly').value,
+                        mentor_id: document.getElementById('course-mentor').value
                     }
                 }
             }).then(async (result) => {
@@ -3373,16 +3906,492 @@
             });
         }
 
+        async function viewStudentPayment(studentId) {
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/students/${studentId}/payments`);
+                const payments = await res.json();
+                
+                let html = `
+                    <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+                        <button class="btn-ios btn-neon" onclick="addPaymentModal(${studentId})" style="margin-bottom: 15px; width: 100%;"><i class="fa-solid fa-plus"></i> Yangi To'lov kiritish</button>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #333;">
+                                    <th style="padding: 10px;">Sana</th>
+                                    <th style="padding: 10px;">Suma</th>
+                                    <th style="padding: 10px;">Kurs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${payments.length ? payments.map(p => `
+                                    <tr style="border-bottom: 1px solid #222;">
+                                        <td style="padding: 10px;">${new Date(p.created_at).toLocaleDateString()}</td>
+                                        <td style="padding: 10px; color: var(--neon-cyan);">${new Intl.NumberFormat('uz-UZ').format(p.amount)} UZS</td>
+                                        <td style="padding: 10px;">${p.course_title}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="3" style="text-align:center; padding: 20px; opacity: 0.5;">To\'lovlar topilmadi.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                Swal.fire({
+                    title: 'To\'lovlar Tarixi',
+                    html: html,
+                    background: '#0a0a1a',
+                    color: '#fff',
+                    showConfirmButton: false,
+                    showCloseButton: true
+                });
+            } catch(e) { Swal.fire('Error', 'Ma\'lumotni yuklashda xato', 'error'); }
+        }
+
+        async function addPaymentModal(studentId) {
+            const courses = await (await fetch(`${API_PREFIX}/academy/courses`)).json();
+            
+            Swal.fire({
+                title: 'Yangi To\'lov',
+                html: `
+                    <div style="text-align: left;">
+                        <label style="font-size: 11px; opacity: 0.5;">Kurs</label>
+                        <select id="pay-course" class="swal2-input" style="width: 90%; background: #1a1a1a; color: white;">
+                            ${courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('')}
+                        </select>
+                        <label style="font-size: 11px; opacity: 0.5; margin-top: 10px; display: block;">Summa (UZS)</label>
+                        <input id="pay-amount" type="number" class="swal2-input" placeholder="0" style="width: 80%;">
+                        <label style="font-size: 11px; opacity: 0.5; margin-top: 10px; display: block;">Turi</label>
+                        <select id="pay-method" class="swal2-input" style="width: 90%; background: #1a1a1a; color: white;">
+                            <option value="cash">Naqd</option>
+                            <option value="card">Karta (Terminal)</option>
+                            <option value="payme">Payme / Click</option>
+                        </select>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Saqlash',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        user_id: studentId,
+                        course_id: document.getElementById('pay-course').value,
+                        amount: document.getElementById('pay-amount').value,
+                        payment_method: document.getElementById('pay-method').value
+                    }
+                }
+            }).then(async (result) => {
+                if(result.isConfirmed) {
+                    await fetch(`${API_PREFIX}/academy/payments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                        body: JSON.stringify(result.value)
+                    });
+                    Swal.fire('Tayyor!', 'To\'lov qabul qilindi.', 'success');
+                }
+            });
+        }
+
+        async function openStudentModal(id) {
+            try {
+                // Fetch student details from application/user
+                const students = await (await fetch(`${API_PREFIX}/academy/students`)).json();
+                const s = students.find(x => x.id == id);
+                if(!s) return;
+
+                Swal.fire({
+                    title: 'O\'quvchi Ma\'lumotlari',
+                    html: `
+                        <div style="text-align: left;">
+                            <label style="font-size: 11px; opacity: 0.5;">F.I.SH</label>
+                            <input id="edit-s-name" class="swal2-input" value="${s.name}" style="width: 80%;">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                                <div>
+                                    <label style="font-size: 11px; opacity: 0.5;">Email / Login</label>
+                                    <input id="edit-s-email" class="swal2-input" value="${s.email}" style="width: 100%; margin: 0;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; opacity: 0.5;">Yangi Parol (ixtiyoriy)</label>
+                                    <input id="edit-s-password" type="password" class="swal2-input" placeholder="********" style="width: 100%; margin: 0;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                                <div>
+                                    <label style="font-size: 11px; opacity: 0.5;">Passport</label>
+                                    <input id="edit-s-passport" class="swal2-input" value="${s.passport_number || ''}" style="width: 100%; margin: 0;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; opacity: 0.5;">JSHIR</label>
+                                    <input id="edit-s-jshir" class="swal2-input" value="${s.jshir || ''}" style="width: 100%; margin: 0;">
+                                </div>
+                            </div>
+
+                            <label style="font-size: 11px; opacity: 0.5; margin-top: 10px; display: block;">Manzil</label>
+                            <input id="edit-s-address" class="swal2-input" value="${s.address || ''}" style="width: 80%;">
+                            
+                            <label style="font-size: 11px; opacity: 0.5; margin-top: 10px; display: block;">Status</label>
+                            <select id="edit-s-status" class="swal2-input" style="width: 90%; background: #1a1a1a; color: white;">
+                                <option value="enrolled" ${s.study_status === 'enrolled' ? 'selected' : ''}>O'qimoqda</option>
+                                <option value="graduated" ${s.study_status === 'graduated' ? 'selected' : ''}>Bitirgan</option>
+                                <option value="dropped" ${s.study_status === 'dropped' ? 'selected' : ''}>Tashlab ketgan</option>
+                            </select>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Saqlash',
+                    background: '#0a0a1a',
+                    color: '#fff',
+                    preConfirm: () => {
+                        return {
+                            name: document.getElementById('edit-s-name').value,
+                            email: document.getElementById('edit-s-email').value,
+                            password: document.getElementById('edit-s-password').value,
+                            passport_number: document.getElementById('edit-s-passport').value,
+                            jshir: document.getElementById('edit-s-jshir').value,
+                            address: document.getElementById('edit-s-address').value,
+                            study_status: document.getElementById('edit-s-status').value
+                        }
+                    }
+                }).then(async (result) => {
+                    if(result.isConfirmed) {
+                        try {
+                            const res = await fetch(`${API_PREFIX}/academy/students/${id}/profile`, {
+                                method: 'PUT',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content 
+                                },
+                                body: JSON.stringify(result.value)
+                            });
+                            if(res.ok) {
+                                Swal.fire('Saqlandi!', 'O\'quvchi ma\'lumotlari yangilandi.', 'success');
+                                loadAcademyStudentsFull();
+                            }
+                        } catch(e) { }
+                    }
+                });
+            } catch(e) { }
+        }
+        async function viewStudentEnrollments(studentId) {
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/students/${studentId}/enrollments`);
+                const enrollments = await res.json();
+                
+                let html = `
+                    <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+                        <button class="btn-ios btn-neon" onclick="enrollStudentModal(${studentId})" style="margin-bottom: 15px; width: 100%;"><i class="fa-solid fa-plus"></i> Yangi Kursga biriktirish</button>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #333;">
+                                    <th style="padding: 10px;">Kurs</th>
+                                    <th style="padding: 10px;">Muddati</th>
+                                    <th style="padding: 10px;">Status</th>
+                                    <th style="padding: 10px;">Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${enrollments.length ? enrollments.map(e => `
+                                    <tr style="border-bottom: 1px solid #222;">
+                                        <td style="padding: 10px;">${e.course_title}</td>
+                                        <td style="padding: 10px;">
+                                            <div style="font-size: 11px;">Boshlandi: ${new Date(e.enrolled_at).toLocaleDateString()}</div>
+                                            <div style="font-size: 11px; color: ${new Date(e.expires_at) < new Date() ? 'var(--neon-pink)' : 'var(--neon-cyan)'}">Tugaydi: ${new Date(e.expires_at).toLocaleDateString()}</div>
+                                        </td>
+                                        <td style="padding: 10px;">
+                                            <span class="badge" style="background: ${e.status === 'active' ? 'rgba(0,255,204,0.1)' : 'rgba(176,38,255,0.1)'}; color: ${e.status === 'active' ? 'var(--neon-cyan)' : 'var(--neon-purple)'}; padding: 3px 8px; border-radius: 10px; font-size: 10px;">
+                                                ${e.status.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px;">
+                                            <button class="btn-ios" onclick="extendEnrollmentModal(${e.id}, ${studentId})" style="padding: 4px 8px;" title="Uzaytirish"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                                        </td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="4" style="text-align:center; padding: 20px; opacity: 0.5;">Kurslar topilmadi.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                Swal.fire({
+                    title: 'Kurslar Bo\'limi',
+                    html: html,
+                    background: '#0a0a1a',
+                    color: '#fff',
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    width: '600px'
+                });
+            } catch(e) { Swal.fire('Error', 'Ma\'lumotni yuklashda xato', 'error'); }
+        }
+
+        async function enrollStudentModal(studentId) {
+            const courses = await (await fetch(`${API_PREFIX}/academy/courses`)).json();
+            
+            Swal.fire({
+                title: 'Kursga Biriktirish',
+                html: `
+                    <div style="text-align: left;">
+                        <label style="font-size: 11px; opacity: 0.5;">Kursni tanlang</label>
+                        <select id="enroll-course" class="swal2-input" style="width: 90%; background: #1a1a1a; color: white;">
+                            ${courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('')}
+                        </select>
+                        <label style="font-size: 11px; opacity: 0.5; margin-top: 15px; display: block;">Davomiyligi (oy)</label>
+                        <input id="enroll-duration" type="number" class="swal2-input" value="3" style="width: 80%;">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Biriktirish',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        user_id: studentId,
+                        course_id: document.getElementById('enroll-course').value,
+                        duration_months: document.getElementById('enroll-duration').value
+                    }
+                }
+            }).then(async (result) => {
+                if(result.isConfirmed) {
+                    const res = await fetch(`${API_PREFIX}/academy/enroll`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                        body: JSON.stringify(result.value)
+                    });
+                    if(res.ok) {
+                        Swal.fire('Tayyor!', 'O\'quvchi kursga biriktirildi.', 'success');
+                        viewStudentEnrollments(studentId);
+                    }
+                }
+            });
+        }
+
+        function extendEnrollmentModal(enrollmentId, studentId) {
+            Swal.fire({
+                title: 'Muddati Uzaytirish',
+                html: `
+                    <div style="text-align: left;">
+                        <label style="font-size: 11px; opacity: 0.5;">Necha kunga uzaytirish kerak?</label>
+                        <input id="extend-days" type="number" class="swal2-input" value="30" style="width: 80%;">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Uzaytirish',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return { days: document.getElementById('extend-days').value }
+                }
+            }).then(async (result) => {
+                if(result.isConfirmed) {
+                    const res = await fetch(`${API_PREFIX}/academy/enroll/${enrollmentId}/extend`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                        body: JSON.stringify(result.value)
+                    });
+                    if(res.ok) {
+                        Swal.fire('Uzaytirildi!', 'Kurs muddati yangilandi.', 'success');
+                        viewStudentEnrollments(studentId);
+                    }
+                }
+            });
+        }
+
+        async function openStudentAnalytics(studentId) {
+            Swal.fire({ title: 'Tahlil qilinmoqda...', didOpen: () => Swal.showLoading(), background: '#0a0a1a', color: '#fff' });
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/students/${studentId}/analytics`);
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    const u = data.user;
+                    const s = data.stats;
+                    
+                    let html = `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="display: flex; gap: 20px; margin-bottom: 25px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; border: 1px solid var(--glass-border);">
+                                <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--grad-neon); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #000;">
+                                    ${u.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; color: white;">${u.name}</h3>
+                                    <div style="font-size: 12px; opacity: 0.6; margin-top: 4px;">${u.email}</div>
+                                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                        <span class="badge" style="background: rgba(0,255,204,0.1); color: var(--neon-cyan); border: 1px solid rgba(0,255,204,0.2);">${u.rank}</span>
+                                        <span class="badge" style="background: rgba(176,38,255,0.1); color: var(--neon-purple); border: 1px solid rgba(176,38,255,0.2);">${u.study_status.toUpperCase()}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                                <div class="glass-panel" style="padding: 15px; text-align: center; border-bottom: 2px solid var(--neon-cyan);">
+                                    <div style="font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px;">Umumiy To'lov</div>
+                                    <div style="font-size: 18px; color: var(--neon-cyan); font-weight: bold; margin-top: 5px;">${new Intl.NumberFormat('uz-UZ').format(s.total_paid)} UZS</div>
+                                </div>
+                                <div class="glass-panel" style="padding: 15px; text-align: center; border-bottom: 2px solid var(--neon-purple);">
+                                    <div style="font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px;">Chat Faolligi</div>
+                                    <div style="font-size: 18px; color: var(--neon-purple); font-weight: bold; margin-top: 5px;">${s.chat_activity} xabar</div>
+                                </div>
+                                <div class="glass-panel" style="padding: 15px; text-align: center; border-bottom: 2px solid #ff00ff;">
+                                    <div style="font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px;">Tajriba (XP)</div>
+                                    <div style="font-size: 18px; color: #ff00ff; font-weight: bold; margin-top: 5px;">${u.xp} XP</div>
+                                </div>
+                                <div class="glass-panel" style="padding: 15px; text-align: center; border-bottom: 2px solid #00ffff;">
+                                    <div style="font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px;">O'rtacha IQ</div>
+                                    <div style="font-size: 18px; color: #00ffff; font-weight: bold; margin-top: 5px;">${s.avg_iq}</div>
+                                </div>
+                            </div>
+
+                            <h5 style="margin-bottom: 15px; opacity: 0.8;"><i class="fa-solid fa-chart-bar"></i> Haftalik Faollik</h5>
+                            <div style="display: flex; align-items: flex-end; gap: 10px; height: 100px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-bottom: 25px;">
+                                ${data.activity_log.map(day => `
+                                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                                        <div style="width: 100%; height: ${day.count * 10}px; min-height: 4px; background: ${day.count > 0 ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.05)'}; border-radius: 4px; box-shadow: ${day.count > 0 ? '0 0 10px var(--neon-cyan)' : 'none'}; transition: height 0.3s;"></div>
+                                        <span style="font-size: 9px; opacity: 0.5;">${day.day}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <h5 style="margin-bottom: 10px; opacity: 0.8;"><i class="fa-solid fa-layer-group"></i> Kurslar va Muddatlar</h5>
+                            <div style="max-height: 150px; overflow-y: auto;">
+                                ${data.enrollments.map(e => `
+                                    <div style="margin-bottom: 8px; background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <div style="font-size: 13px; color: white;">${e.course_title}</div>
+                                            <div style="font-size: 10px; opacity: 0.5;">Tugaydi: ${new Date(e.expires_at).toLocaleDateString()}</div>
+                                        </div>
+                                        <span style="font-size: 10px; color: ${e.status === 'active' ? 'var(--neon-cyan)' : 'var(--neon-purple)'};">${e.status.toUpperCase()}</span>
+                                    </div>
+                                `).join('') || '<div style="opacity:0.3; font-size:12px; text-align:center;">Kurslar topilmadi</div>'}
+                            </div>
+                        </div>
+                    `;
+
+                    Swal.fire({
+                        title: 'O\'quvchi Analitikasi',
+                        html: html,
+                        background: '#0a0a1a',
+                        color: '#fff',
+                        showConfirmButton: false,
+                        showCloseButton: true,
+                        width: '500px'
+                    });
+                }
+            } catch(e) { Swal.fire('Xato', 'Analitikani yuklab bo\'lmadi.', 'error'); }
+        }
+
+
         function openAcademyQuickModal() {
             Swal.fire({
                 title: 'Akademiya Tezkor Menyu',
                 html: 'Tizimga yangi o\'quvchi yoki resurs qo\'shish uchun modullarni tanlang.',
                 showDenyButton: true,
                 showCancelButton: true,
-                confirmButtonText: 'Yangi O\'quvchi',
-                denyButtonText: 'Yangi Dars',
+                confirmButtonText: '<i class="fa-solid fa-user-plus"></i> Yangi O\'quvchi',
+                denyButtonText: '<i class="fa-solid fa-book"></i> Yangi Kurs',
                 background: '#0a0a1a',
-                color: '#fff'
+                color: '#fff',
+                customClass: {
+                    confirmButton: 'btn-ios btn-neon',
+                    denyButton: 'btn-ios'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    openAcademyApplicationModal();
+                } else if (result.isDenied) {
+                    openCourseModal();
+                }
+            });
+        }
+
+        function openAcademyApplicationModal() {
+            Swal.fire({
+                title: 'Yangi O\'quvchi Arizasi',
+                html: `
+                    <div style="text-align: left; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="grid-column: 1/-1;">
+                            <label style="font-size: 11px; opacity: 0.5;">F.I.SH</label>
+                            <input id="app-name" class="swal2-input" placeholder="Ism familiya" style="width: 95%; margin: 5px 0;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; opacity: 0.5;">Telefon</label>
+                            <input id="app-phone" class="swal2-input" placeholder="+998" style="width: 90%; margin: 5px 0;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; opacity: 0.5;">Email</label>
+                            <input id="app-email" class="swal2-input" placeholder="mail@example.com" style="width: 90%; margin: 5px 0;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; opacity: 0.5;">Yo'nalish</label>
+                            <select id="app-dir" class="swal2-input" style="width: 95%; margin: 5px 0; background: #1a1a1a; color: white;">
+                                <option value="Frontend">Frontend</option>
+                                <option value="Backend">Backend</option>
+                                <option value="AI Engineer">AI Engineer</option>
+                                <option value="Mobile">Mobile (Flutter)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; opacity: 0.5;">Daraja</label>
+                            <select id="app-lvl" class="swal2-input" style="width: 95%; margin: 5px 0; background: #1a1a1a; color: white;">
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: 1/-1; border-top: 1px solid #333; margin-top: 10px; padding-top: 10px;">
+                            <h5 style="margin-bottom: 10px;">Shaxsiy Ma'lumotlar (Optional)</h5>
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; opacity: 0.5;">Passport Seriya & Raqam</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input id="app-p-ser" class="swal2-input" placeholder="AA" style="width: 30%; margin: 0;">
+                                <input id="app-p-num" class="swal2-input" placeholder="1234567" style="width: 70%; margin: 0;">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; opacity: 0.5;">JSHIR (PINFL)</label>
+                            <input id="app-jshir" class="swal2-input" placeholder="14 xonali son" style="width: 90%; margin: 0;">
+                        </div>
+                        <div style="grid-column: 1/-1;">
+                            <label style="font-size: 11px; opacity: 0.5;">Yashash manzili</label>
+                            <input id="app-address" class="swal2-input" placeholder="Viloyat, tuman, ko'cha..." style="width: 95%; margin: 5px 0;">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Yuborish',
+                background: '#0a0a1a',
+                color: '#fff',
+                preConfirm: () => {
+                    return {
+                        name: document.getElementById('app-name').value,
+                        phone: document.getElementById('app-phone').value,
+                        email: document.getElementById('app-email').value,
+                        direction: document.getElementById('app-dir').value,
+                        level: document.getElementById('app-lvl').value,
+                        location: 'Toshkent',
+                        passport_series: document.getElementById('app-p-ser').value,
+                        passport_number: document.getElementById('app-p-num').value,
+                        jshir: document.getElementById('app-jshir').value,
+                        address: document.getElementById('app-address').value
+                    }
+                }
+            }).then(async (result) => {
+                if(result.isConfirmed) {
+                    try {
+                        const res = await fetch(`${API_PREFIX}/academy/apply`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                            body: JSON.stringify(result.value)
+                        });
+                        const data = await res.json();
+                        if(data.status === 'success') {
+                            Swal.fire('Bajarildi!', 'Ariza muvaffaqiyatli topshirildi.', 'success');
+                            loadAcademyApplications();
+                        } else {
+                            Swal.fire('Xato', data.message, 'error');
+                        }
+                    } catch(e) { Swal.fire('Error', 'Server error', 'error'); }
+                }
             });
         }
 
@@ -3397,27 +4406,40 @@
                     return;
                 }
 
-                container.innerHTML = apps.map(app => `
-                    <div class="glass-panel" style="padding: 20px; border-top: 3px solid ${app.status === 'accepted' ? 'var(--neon-cyan)' : 'var(--neon-purple)'};">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span class="status-badge" style="background: ${app.status === 'pending' ? 'rgba(176,38,255,0.1)' : 'rgba(0,255,204,0.1)'}; color: ${app.status === 'pending' ? 'var(--neon-purple)' : 'var(--neon-cyan)'}; border-color: currentcolor;">${app.status.toUpperCase()}</span>
-                            <small style="opacity: 0.5;">${new Date(app.created_at).toLocaleDateString()}</small>
-                        </div>
-                        <h4 style="margin: 0 0 5px 0;">${app.name}</h4>
-                        <div style="font-size: 13px; opacity: 0.7; margin-bottom: 5px;"><i class="fa-solid fa-phone"></i> ${app.phone}</div>
-                        <div style="font-size: 13px; opacity: 0.7; margin-bottom: 15px;"><i class="fa-solid fa-code"></i> ${app.direction}</div>
-                        
-                        <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; font-size: 11px; margin-bottom: 20px;">
-                            <i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Tahlili: 
-                            <p style="margin-top: 5px; opacity: 0.8; line-height: 1.4;">${app.ai_assessment ? JSON.parse(app.ai_assessment).assessment : 'Tahlil qilinmoqda...'}</p>
-                        </div>
+                container.innerHTML = apps.map(app => {
+                    let assessmentText = "Tahlil qilinmoqda...";
+                    if (app.ai_assessment) {
+                        try {
+                            const parsed = JSON.parse(app.ai_assessment);
+                            assessmentText = parsed.assessment || "Tahlil yakunlandi, ammo matn topilmadi.";
+                        } catch(e) {
+                            assessmentText = "AI tahlilida formatting xatosi orqali tahlil yakunlandi.";
+                            console.error("AI Parse Error", e);
+                        }
+                    }
 
-                        <div style="display: flex; gap: 10px;">
-                            ${app.status === 'pending' || app.status === 'test_sent' ? `<button onclick="approveApplication(${app.id})" class="btn-ios btn-neon" style="flex: 2; font-size: 11px;">Qabul qilish</button>` : ''}
-                            <button onclick="deleteApplication(${app.id})" class="btn-ios" style="flex: 1; color: var(--neon-pink); font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+                    return `
+                        <div class="glass-panel" style="padding: 20px; border-top: 3px solid ${app.status === 'accepted' ? 'var(--neon-cyan)' : 'var(--neon-purple)'};">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span class="status-badge" style="background: ${app.status === 'pending' ? 'rgba(176,38,255,0.1)' : 'rgba(0,255,204,0.1)'}; color: ${app.status === 'pending' ? 'var(--neon-purple)' : 'var(--neon-cyan)'}; border-color: currentcolor;">${app.status.toUpperCase()}</span>
+                                <small style="opacity: 0.5;">${new Date(app.created_at).toLocaleDateString()}</small>
+                            </div>
+                            <h4 style="margin: 0 0 5px 0;">${app.name}</h4>
+                            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 5px;"><i class="fa-solid fa-phone"></i> ${app.phone}</div>
+                            <div style="font-size: 13px; opacity: 0.7; margin-bottom: 15px;"><i class="fa-solid fa-code"></i> ${app.direction}</div>
+                            
+                            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; font-size: 11px; margin-bottom: 20px;">
+                                <i class="fa-solid fa-robot" style="color: var(--neon-cyan);"></i> AI Tahlili: 
+                                <p style="margin-top: 5px; opacity: 0.8; line-height: 1.4;">${assessmentText}</p>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                ${app.status === 'pending' || app.status === 'test_sent' ? `<button onclick="approveApplication(${app.id})" class="btn-ios btn-neon" style="flex: 2; font-size: 11px;">Qabul qilish</button>` : ''}
+                                <button onclick="deleteApplication(${app.id})" class="btn-ios" style="flex: 1; color: var(--neon-pink); font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch(e) { console.error("Load Apps Error", e); }
         }
 
@@ -3543,6 +4565,76 @@
             } catch(e) { 
                  document.getElementById(loadingId).innerText = "Ustoz bilan aloqa uzildi.";
             }
+        }
+
+        async function loadStudentAchievements() {
+            const grid = document.getElementById('s-achievements-grid');
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/user/achievements`);
+                const data = await res.json();
+                grid.innerHTML = data.map(a => `
+                    <div class="glass-panel" style="padding: 25px; text-align: center; border: 1px solid rgba(0,255,204,0.1); box-shadow: 0 0 20px rgba(0,255,204,0.05);">
+                        <div style="font-size: 40px; color: var(--neon-purple); margin-bottom: 15px;">
+                            <i class="fa-solid ${a.icon}"></i>
+                        </div>
+                        <h4 style="margin: 0; color: white;">${a.name}</h4>
+                        <p style="font-size: 11px; opacity: 0.5; margin-top: 5px;">${a.description}</p>
+                        <div style="font-size: 10px; color: var(--neon-cyan); margin-top: 10px;">Berildi: ${new Date(a.awarded_at).toLocaleDateString()}</div>
+                    </div>
+                `).join('') || '<div style="grid-column: 1/-1; text-align: center; padding: 40px; opacity: 0.5;">Hali yutuqlar yo\'q. Ko\'proq dars o\'qing!</div>';
+            } catch(e) {}
+        }
+
+        async function loadStudentJobs() {
+            try {
+                // Jobs
+                const resJobs = await fetch(`${API_PREFIX}/academy/jobs`);
+                const jobs = await resJobs.json();
+                document.getElementById('s-jobs-list').innerHTML = jobs.map(j => `
+                    <div class="glass-panel" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--neon-cyan);">
+                        <div>
+                            <h5 style="margin: 0; color: white;">${j.title}</h5>
+                            <div style="font-size: 11px; opacity: 0.7;">${j.company_name} • ${j.location}</div>
+                        </div>
+                        <button class="btn-ios btn-neon" onclick="studentApplyJob(${j.id})">Ariza topshirish</button>
+                    </div>
+                `).join('') || '<div style="opacity: 0.5;">Hozircha vakansiyalar mavjud emas.</div>';
+
+                // Status & Certs
+                const resDashboard = await fetch(`/internal-api/academy/student/dashboard`);
+                const dash = await resDashboard.json();
+                const ready = dash.progress && dash.progress.is_career_ready;
+                
+                document.getElementById('s-career-readiness-badge').innerHTML = ready 
+                    ? '<span style="color: var(--neon-cyan); font-weight: bold;"><i class="fa-solid fa-circle-check"></i> Karyera uchun tayyor!</span>'
+                    : '<span style="opacity: 0.5;">Hali tayyor emassiz. O\'qishni davom eting.</span>';
+
+                // Certs
+                const resCerts = await fetch(`${API_PREFIX}/academy/certificates`);
+                const certs = await resCerts.json();
+                document.getElementById('s-certs-list').innerHTML = certs.map(c => `
+                    <div style="padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+                        <span style="font-size: 12px; color: white;"><i class="fa-solid fa-file-pdf"></i> ${c.course_title}</span>
+                        <a href="${API_PREFIX}/academy/certificates/${c.id}/download" target="_blank" style="color: var(--neon-cyan); font-size: 12px;"><i class="fa-solid fa-download"></i></a>
+                    </div>
+                `).join('') || '<div style="opacity: 0.3; font-size: 11px;">Hali sertifikatlar yo\'q.</div>';
+            } catch(e) {}
+        }
+
+        async function studentApplyJob(id) {
+            Swal.fire({ title: 'Topshirilmoqda...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`${API_PREFIX}/academy/jobs/${id}/apply`, {
+                    method: 'POST',
+                    headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content}
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    Swal.fire('Tabriklaymiz!', data.message, 'success');
+                } else {
+                    Swal.fire('Xato', data.message, 'error');
+                }
+            } catch(e) { Swal.fire('Xato', 'Server xatosi', 'error'); }
         }
 
         // UTILITIES

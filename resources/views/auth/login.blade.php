@@ -121,19 +121,56 @@
         @keyframes textPulse { from { opacity: 0.5; } to { opacity: 1; text-shadow: 0 0 10px var(--neon-purple); } }
 
         .error-msg { color: var(--neon-pink); font-size: 14px; margin-bottom: 15px; display: none; }
+        
+        /* Lang Switcher Naked Style */
+        .lang-switcher-premium {
+            position: absolute; top: 15px; right: 15px; z-index: 10000;
+            background: transparent; border: none; padding: 2px;
+            display: flex; align-items: center; gap: 8px; transition: 0.3s; cursor: pointer;
+        }
+        .lang-choices { display: flex; width: 0; overflow: hidden; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); gap: 10px; align-items: center; }
+        .lang-switcher-premium:hover .lang-choices { width: 110px; }
+        .lang-flag-img { width: 22px; height: 14px; object-fit: cover; border-radius: 2px; transition: 0.2s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .lang-flag-link:hover .lang-flag-img { transform: scale(1.2); filter: brightness(1.2); }
+        .current-flag-img { border: 1px solid rgba(0, 255, 204, 0.8); }
+
+        .btn-home {
+            position: absolute; top: 15px; left: 15px; z-index: 10000;
+            color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 600;
+            display: flex; align-items: center; gap: 8px; transition: 0.3s;
+            padding: 8px 15px; border-radius: 10px; border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.02);
+        }
+        .btn-home:hover { color: var(--neon-cyan); border-color: var(--neon-cyan); background: rgba(0,255,204,0.05); transform: translateX(5px); }
+
+        /* Scanning effect */
+        .scan-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(0deg, transparent 0%, rgba(0, 255, 204, 0.05) 50%, transparent 100%);
+            background-size: 100% 200px; animation: scanAnim 4s linear infinite; pointer-events: none; z-index: 9999; opacity: 0.5;
+        }
+        @keyframes scanAnim { from { background-position: 0 -200px; } to { background-position: 0 100vh; } }
     </style>
 </head>
 <body>
 
+    <div class="scan-overlay"></div>
     <div class="ambient-blob blob-1"></div>
     <div class="ambient-blob blob-2"></div>
 
+        <a href="/" class="btn-home"><i class="fa-solid fa-house"></i> {{ __('Home') }}</a>
     <div class="glass-panel" id="login-panel">
-        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px;">
-            <a href="{{ route('lang.switch', 'uz') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'uz' ? '1' : '0.4' }};">🇺🇿</a>
-            <a href="{{ route('lang.switch', 'tr') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'tr' ? '1' : '0.4' }};">🇹🇷</a>
-            <a href="{{ route('lang.switch', 'ru') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'ru' ? '1' : '0.4' }};">🇷🇺</a>
-            <a href="{{ route('lang.switch', 'en') }}" style="text-decoration: none; opacity: {{ App::getLocale() == 'en' ? '1' : '0.4' }};">🇺🇸</a>
+        <div class="lang-switcher-premium">
+            <span class="lang-flag current">
+                @php $cur = App::getLocale(); @endphp
+                <img src="https://flagcdn.com/w40/{{ $cur == 'en' ? 'gb' : $cur }}.png" class="lang-flag-img current-flag-img">
+            </span>
+            <div class="lang-choices">
+                <a href="{{ route('lang.switch', 'uz') }}" class="lang-flag-link" title="O'zbek"><img src="https://flagcdn.com/w40/uz.png" class="lang-flag-img"></a>
+                <a href="{{ route('lang.switch', 'tr') }}" class="lang-flag-link" title="Türkçe"><img src="https://flagcdn.com/w40/tr.png" class="lang-flag-img"></a>
+                <a href="{{ route('lang.switch', 'ru') }}" class="lang-flag-link" title="Русский"><img src="https://flagcdn.com/w40/ru.png" class="lang-flag-img"></a>
+                <a href="{{ route('lang.switch', 'en') }}" class="lang-flag-link" title="English"><img src="https://flagcdn.com/w40/gb.png" class="lang-flag-img"></a>
+            </div>
         </div>
         <div class="brand">
             <div class="logo-animated" style="display: inline-block; font-size: 32px; font-weight: 800; letter-spacing: 1px;">
@@ -284,7 +321,6 @@
         }
 
         let faceTimeout = null;
-        let faceRetryCount = 0;
 
         async function requestTelegramOTP() {
             // Stop any pending FaceID retries

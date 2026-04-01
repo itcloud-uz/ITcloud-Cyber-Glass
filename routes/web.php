@@ -18,6 +18,7 @@ Route::get('/', [LandingController::class, 'index'])->name('home');
 
 Route::controller(LandingController::class)->group(function() {
     Route::get('/constructor', 'constructor')->name('constructor');
+    Route::get('/academy', 'academy')->name('academy.landing');
     Route::post('/api/inquiry/submit', 'submitInquiry');
 });
 

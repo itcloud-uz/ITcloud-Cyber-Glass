@@ -119,6 +119,18 @@
             font-size: 14px;
             border: 1px solid rgba(255, 0, 127, 0.2);
         }
+
+        /* Lang Switcher Naked Style */
+        .lang-switcher-premium {
+            position: absolute; top: 15px; right: 15px; z-index: 10000;
+            background: transparent; border: none; padding: 2px;
+            display: flex; align-items: center; gap: 8px; transition: 0.3s; cursor: pointer;
+        }
+        .lang-choices { display: flex; width: 0; overflow: hidden; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); gap: 10px; align-items: center; }
+        .lang-switcher-premium:hover .lang-choices { width: 110px; }
+        .lang-flag-img { width: 22px; height: 14px; object-fit: cover; border-radius: 2px; transition: 0.2s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .lang-flag-link:hover .lang-flag-img { transform: scale(1.2); filter: brightness(1.2); }
+        .current-flag-img { border: 1px solid rgba(0, 255, 204, 0.8); }
     </style>
 </head>
 <body>
@@ -127,6 +139,18 @@
     <div class="ambient-blob blob-2"></div>
 
     <div class="login-card">
+        <div class="lang-switcher-premium">
+            <span class="lang-flag current">
+                @php $cur = App::getLocale(); @endphp
+                <img src="https://flagcdn.com/w40/{{ $cur == 'en' ? 'gb' : $cur }}.png" class="lang-flag-img current-flag-img">
+            </span>
+            <div class="lang-choices">
+                <a href="{{ route('lang.switch', 'uz') }}" class="lang-flag-link" title="O'zbek"><img src="https://flagcdn.com/w40/uz.png" class="lang-flag-img"></a>
+                <a href="{{ route('lang.switch', 'tr') }}" class="lang-flag-link" title="Türkçe"><img src="https://flagcdn.com/w40/tr.png" class="lang-flag-img"></a>
+                <a href="{{ route('lang.switch', 'ru') }}" class="lang-flag-link" title="Русский"><img src="https://flagcdn.com/w40/ru.png" class="lang-flag-img"></a>
+                <a href="{{ route('lang.switch', 'en') }}" class="lang-flag-link" title="English"><img src="https://flagcdn.com/w40/gb.png" class="lang-flag-img"></a>
+            </div>
+        </div>
         <div class="brand-logo">IT<span>cloud</span> Client</div>
         
         @if($errors->any())
